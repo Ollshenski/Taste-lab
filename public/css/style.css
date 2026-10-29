@@ -170,13 +170,21 @@ p { margin: 0 0 1em; }
   transition: transform .4s var(--ease);
   filter: drop-shadow(10px 14px 0 rgba(21,21,21,.08));
 }
-.beaker-svg { width: 100%; height: 100%; }
+.beaker-svg { width: 100%; height: 100%; overflow: visible; }
 .wave { animation: wave 5s linear infinite; }
 .wave--b { animation-duration: 3.2s; animation-direction: reverse; }
 @keyframes wave { to { transform: translateX(-160px); } }
 .bubbles-in circle { animation: rise 3s ease-in infinite; }
 .bubbles-in circle:nth-child(2) { animation-delay: .8s; } .bubbles-in circle:nth-child(3) { animation-delay: 1.6s; } .bubbles-in circle:nth-child(4) { animation-delay: 2.2s; }
 @keyframes rise { 0% { transform: translateY(40px); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
+.bubbles-out circle { animation: escape 3.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.bubbles-out circle:nth-child(2) { animation-delay: 1.2s; } .bubbles-out circle:nth-child(3) { animation-delay: 2.4s; }
+@keyframes escape {
+  0% { transform: translate(0, 40px) scale(.4); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translate(var(--drift, 12px), -70px) scale(1.15); opacity: 0; }
+}
+.bubbles-out circle:nth-child(2) { --drift: -16px; }
 
 .floaters { position: absolute; inset: 0; }
 .floater {

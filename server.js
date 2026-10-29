@@ -12,7 +12,7 @@ const payments = require('./lib/payments');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
-const UPLOAD_DIR = path.join(ROOT, 'data', 'uploads');
+const UPLOAD_DIR = path.join(store.DATA_DIR, 'uploads');
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 store.init();
@@ -391,7 +391,11 @@ app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '30d' }));
 app.use(express.static(path.join(ROOT, 'public'), { extensions: ['html'] }));
 app.use((req, res) => res.status(404).sendFile(path.join(ROOT, 'public', '404.html')));
 
-app.listen(PORT, () => {
-  console.log(`Taste Lab → http://localhost:${PORT}`);
-  console.log(`Admin     → http://localhost:${PORT}/admin`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Taste Lab → http://localhost:${PORT}`);
+    console.log(`Admin     → http://localhost:${PORT}/admin`);
+  });
+}
+
+module.exports = app;

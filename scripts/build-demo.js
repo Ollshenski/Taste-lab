@@ -14,12 +14,13 @@ const ROOT = path.join(__dirname, '..');
 const PUB = path.join(ROOT, 'public');
 const OUT = path.resolve(process.argv[2] || path.join(ROOT, 'demo-dist'));
 
-const MIME = { '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg' };
+const MIME = { '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
 const read = (rel) => fs.readFileSync(path.join(PUB, rel), 'utf8');
 const dataUri = (rel) => `data:${MIME[path.extname(rel)]};base64,${fs.readFileSync(path.join(PUB, rel)).toString('base64')}`;
 
 const db = seed();
 delete db.auth;
+for (const p of db.products) if (p.image.startsWith('/products/')) p.image = dataUri(p.image.slice(1));
 const demoApi = fs.readFileSync(path.join(ROOT, 'demo', 'demo-api.js'), 'utf8').replace('__SEED__', JSON.stringify(db));
 
 function build(rel, { home, embedded }) {

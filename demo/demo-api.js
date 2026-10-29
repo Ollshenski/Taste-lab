@@ -4,7 +4,7 @@
    Each visitor gets their own copy of the data. Injected by scripts/build-demo.js. */
 (function () {
   const SEED = __SEED__;
-  const KEY = 'tl_demo_db_v1';
+  const KEY = 'tl_demo_db_v2';
   const SESSION = 'tl_demo_admin';
   const PASSWORD_DEFAULT = 'tastelab2026';
   const STATUSES = ['new', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -42,7 +42,7 @@
       ...existing,
       name: String(input.name || existing.name || 'ახალი პროდუქტი').slice(0, 120),
       nameEn: String(input.nameEn || ''), slug: String(input.slug || existing.slug || uuid().slice(0, 8)),
-      category: ['yogurt', 'fruit', 'mix'].includes(input.category) ? input.category : 'fruit',
+      category: ['yogurt', 'fruit', 'sweets', 'mix'].includes(input.category) ? input.category : 'fruit',
       tagline: String(input.tagline || ''), description: String(input.description || ''), ingredients: String(input.ingredients || ''),
       price: num(input.price), oldPrice: input.oldPrice === '' || input.oldPrice == null ? null : num(input.oldPrice),
       weight: String(input.weight || ''), stock: Math.max(0, Math.round(num(input.stock))),

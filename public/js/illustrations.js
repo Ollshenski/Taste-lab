@@ -95,6 +95,17 @@
     'yogurt-blueberry': () => yogurt('#6C5CE7'),
     'yogurt-mango': () => yogurt('#FFB020'),
     'yogurt-plain': () => yogurt('#E8DCCB'),
+    candy: (c) => {
+      const piece = (x, y, k, r, col) => `
+        <g transform="translate(${x} ${y}) rotate(${r}) scale(${k})">
+          <path d="M-46 0l-26-20v40z" fill="${shade(col, 0.35)}" ${S}/>
+          <path d="M46 0l26-20v40z" fill="${shade(col, 0.35)}" ${S}/>
+          <ellipse cx="0" cy="0" rx="48" ry="34" fill="${col}" ${S}/>
+          <path d="M-26-26c-8 16-8 36 0 52M0-34c-8 20-8 48 0 68M26-26c-8 16-8 36 0 52" fill="none" stroke="${shade(col, 0.6)}" stroke-width="6" stroke-linecap="round"/>
+          <path d="M-30-14c6-8 16-12 24-12" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+        </g>`;
+      return piece(92, 78, 0.9, -18, c) + piece(118, 140, 0.78, 14, '#FFB020') + piece(52, 150, 0.5, -30, '#6C5CE7');
+    },
     mix: () => `
       <g transform="translate(-28 -18) scale(.62)">${parts.strawberry('#E63946')}</g>
       <g transform="translate(70 -4) scale(.6)">${parts.mango('#FFB020')}</g>
@@ -105,7 +116,7 @@
   const NAMES = {
     strawberry: 'მარწყვი', raspberry: 'ჟოლო', banana: 'ბანანი', apple: 'ვაშლი', mango: 'მანგო', blueberry: 'მოცვი',
     'yogurt-strawberry': 'იოგურტი + მარწყვი', 'yogurt-blueberry': 'იოგურტი + მოცვი', 'yogurt-mango': 'იოგურტი + მანგო',
-    'yogurt-plain': 'იოგურტი', mix: 'მიქსი',
+    'yogurt-plain': 'იოგურტი', candy: 'ტკბილეული', mix: 'მიქსი',
   };
 
   function illo(key, color, className = '') {

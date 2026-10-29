@@ -78,7 +78,7 @@ tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--orange-soft); }
 .table-wrap { overflow-x: auto; }
 .thumb { width: 52px; height: 52px; border-radius: 12px; border: 1.5px solid var(--ink); display: grid; place-items: center; overflow: hidden; }
-.thumb svg { width: 85%; } .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.thumb svg { width: 85%; } .thumb img { width: 90%; height: 90%; object-fit: contain; }
 .prod-name { font-weight: 700; font-family: 'Noto Sans Georgian'; }
 .status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1.5px solid var(--ink); font-family: 'Noto Sans Georgian'; white-space: nowrap; }
 .status--new { background: #FFE2C7; } .status--paid { background: #D7F5DD; } .status--processing { background: #FFF3CD; }
@@ -120,7 +120,7 @@ legend { font-weight: 700; padding: 0 8px; font-family: 'Noto Sans Georgian'; }
 .illo-pick button.is-on { border-color: var(--ink); background: var(--orange-soft); box-shadow: 2px 2px 0 var(--ink); }
 .upload { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .upload__preview { width: 90px; height: 90px; border-radius: 14px; border: 2px solid var(--ink); overflow: hidden; display: grid; place-items: center; background: var(--cream); }
-.upload__preview img { width: 100%; height: 100%; object-fit: cover; }
+.upload__preview img { width: 90%; height: 90%; object-fit: contain; }
 .upload__preview svg { width: 80%; }
 
 /* drawer */

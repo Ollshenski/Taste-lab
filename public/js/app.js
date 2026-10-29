@@ -5,7 +5,8 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const CATEGORY = { yogurt: 'იოგურტი', fruit: 'ხილი', mix: 'მიქსი' };
+  const CATEGORY = { yogurt: 'მაწონი / იოგურტი', fruit: 'ხილი', sweets: 'ტკბილეული', mix: 'მიქსი' };
+  const FILTER_ICON = { yogurt: '🥛', fruit: '🍓', sweets: '🍬', mix: '🧪' };
 
   let site;
   let filter = 'all';
@@ -20,6 +21,7 @@
     cart.reconcile();
     bindContent();
     renderStats();
+    renderFilters();
     renderProducts();
     renderSteps();
     renderMixer();
@@ -85,6 +87,14 @@
   }
 
   /* ----------------------------------------------------------- products */
+
+  // Only show category chips that have products on sale.
+  function renderFilters() {
+    const cats = Object.keys(CATEGORY).filter((c) => site.products.some((p) => p.category === c));
+    $('[data-filters]').hidden = cats.length < 2;
+    $('[data-filters]').innerHTML = [['all', 'ყველა'], ...cats.map((c) => [c, `${FILTER_ICON[c]} ${CATEGORY[c]}`])]
+      .map(([k, l]) => `<button class="chip ${k === filter ? 'is-active' : ''}" role="tab" aria-selected="${k === filter}" data-filter="${k}">${esc(l)}</button>`).join('');
+  }
 
   function renderProducts() {
     const list = site.products.filter((p) => filter === 'all' || p.category === filter);
@@ -312,7 +322,7 @@
   /* -------------------------------------------------------------- mixer */
 
   function symbolFor(p) {
-    const base = (p.nameEn || p.slug || 'X').replace(/^(yogurt bites|freeze-dried)\s*[—-]?\s*/i, '');
+    const base = (p.nameEn || p.slug || 'X').replace(/^(bite|frutz|popz|yogurt bites|freeze-dried)\s*[—-]?\s*/i, '');
     const word = base.replace(/[^A-Za-z]/g, '') || 'Xx';
     return word[0].toUpperCase() + (word[1] || '').toLowerCase();
   }
@@ -324,8 +334,8 @@
     els.innerHTML = pool.map((p, i) => `
       <button type="button" class="element" style="--c:${esc(p.color)}" data-el="${esc(p.id)}" aria-pressed="false">
         <span class="element__n mono">${i + 1}</span>
-        <span class="element__sym">${p.category === 'yogurt' ? 'Y' : ''}${esc(symbolFor(p))}</span>
-        <span class="element__name">${p.category === 'yogurt' ? 'იოგ. ' : ''}${esc(p.name.replace(/^.*— /, '').replace('სუბლიმირებული ', ''))}</span>
+        <span class="element__sym">${esc(symbolFor(p))}</span>
+        <span class="element__name">${esc(p.name.replace(/^.*— /, '').replace('სუბლიმირებული ', ''))}</span>
       </button>`).join('');
     $('[data-mix-price]').textContent = money(site.settings.mixPrice);
 
@@ -373,7 +383,7 @@
     btn.disabled = parts.length < 2;
     note.textContent = parts.length < 2 ? `აირჩიე კიდევ ${2 - parts.length} ელემენტი` : parts.length < 4 ? `შეგიძლია დაამატო კიდევ ${4 - parts.length}` : 'კოლბა სავსეა! ✨';
     $('[data-formula]').textContent = parts.length
-      ? 'TL-' + parts.map((p) => (p.category === 'yogurt' ? 'Y' : '') + symbolFor(p)).join('·')
+      ? 'TL-' + parts.map(symbolFor).join('·')
       : '— — —';
 
     if (added && !reduced) {

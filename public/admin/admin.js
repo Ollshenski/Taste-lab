@@ -8,7 +8,7 @@
   const STATUS = { new: 'ახალი', paid: 'გადახდილი', processing: 'მუშავდება', shipped: 'გზაშია', delivered: 'მიწოდებული', cancelled: 'გაუქმებული' };
   const PAY_STATUS = { pending: 'მოლოდინში', paid: 'გადახდილი', failed: 'წარუმატებელი', refunded: 'დაბრუნებული' };
   const PAY_METHOD = { cash: 'მიტანისას', card: 'ბარათით' };
-  const CATEGORY = { yogurt: 'იოგურტი', fruit: 'ხილი', mix: 'მიქსი' };
+  const CATEGORY = { yogurt: 'მაწონი / იოგურტი', fruit: 'ხილი', sweets: 'ტკბილეული', mix: 'მიქსი' };
 
   let db = null;
   let view = 'dashboard';

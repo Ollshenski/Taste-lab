@@ -32,7 +32,7 @@ app.use((req, res, next) => {
 /* ---------------------------------------------------------------- helpers */
 
 const ORDER_STATUSES = ['new', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
-const CATEGORIES = ['yogurt', 'fruit', 'mix'];
+const CATEGORIES = ['yogurt', 'fruit', 'sweets', 'mix'];
 
 function str(v, max = 500) {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -75,7 +75,7 @@ function sanitizeProduct(input, existing = {}) {
     stock: num(input.stock, { min: 0, max: 1e6, int: true }),
     color: /^#[0-9a-fA-F]{6}$/.test(input.color) ? input.color : '#F58220',
     illustration: str(input.illustration, 30) || 'strawberry',
-    image: typeof input.image === 'string' && /^\/uploads\/[\w.-]+$/.test(input.image) ? input.image : (input.image === '' ? '' : existing.image || ''),
+    image: typeof input.image === 'string' && /^\/(uploads|products)\/[\w.-]+$/.test(input.image) ? input.image : (input.image === '' ? '' : existing.image || ''),
     badge: str(input.badge, 30),
     featured: Boolean(input.featured),
     active: input.active === undefined ? true : Boolean(input.active),

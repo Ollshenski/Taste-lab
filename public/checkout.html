@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>შეკვეთის გაფორმება — Taste Lab</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#FDF3E8">
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header is-scrolled">
+    <div class="container header__inner">
+      <a href="/" class="brand" aria-label="Taste Lab — მთავარი">
+        <img src="/assets/mark.svg" alt="" width="54" height="45">
+        <span class="brand__word"><span class="o">Taste</span> Lab</span>
+      </a>
+      <a href="/#shop" class="btn btn--ghost" style="margin-left:auto">← მაღაზიაში დაბრუნება</a>
+    </div>
+  </header>
+
+  <main class="co">
+    <div class="container" data-co-root>
+      <p class="eyebrow mono">// checkout</p>
+      <h1>შეკვეთის გაფორმება</h1>
+      <div class="co__grid">
+        <form data-co-form novalidate>
+          <section class="panel">
+            <h2><span class="n">01</span> საკონტაქტო ინფორმაცია</h2>
+            <div class="fields">
+              <div class="field"><label for="f-name">სახელი, გვარი *</label><input id="f-name" name="name" required autocomplete="name"></div>
+              <div class="field"><label for="f-phone">ტელეფონი *</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel" placeholder="5XX XX XX XX"></div>
+              <div class="field field--full"><label for="f-email">ელ-ფოსტა</label><input id="f-email" name="email" type="email" autocomplete="email"></div>
+            </div>
+          </section>
+          <section class="panel">
+            <h2><span class="n">02</span> მიწოდება</h2>
+            <div class="fields">
+              <div class="field"><label for="f-city">ქალაქი *</label>
+                <select id="f-city" name="city">
+                  <option>თბილისი</option><option>ბათუმი</option><option>ქუთაისი</option><option>რუსთავი</option><option>გორი</option><option>ზუგდიდი</option><option>თელავი</option><option>სხვა</option>
+                </select>
+              </div>
+              <div class="field"><label for="f-address">მისამართი *</label><input id="f-address" name="address" required autocomplete="street-address" placeholder="ქუჩა, სახლი, ბინა"></div>
+              <div class="field field--full"><label for="f-note">კომენტარი კურიერისთვის</label><textarea id="f-note" name="note" rows="3"></textarea></div>
+            </div>
+          </section>
+          <section class="panel">
+            <h2><span class="n">03</span> გადახდა</h2>
+            <div class="pay-opts" data-pay-opts></div>
+            <p class="form-error" data-co-error role="alert"></p>
+            <button class="btn btn--primary btn--lg btn--block" type="submit" data-co-submit>შეკვეთის დადასტურება</button>
+          </section>
+        </form>
+        <aside class="panel summary" aria-label="შეკვეთის შეჯამება">
+          <h2>შენი შეკვეთა</h2>
+          <div data-co-items></div>
+          <div style="margin-top:14px">
+            <div class="sum-row"><span>პროდუქტები</span><span data-co-subtotal></span></div>
+            <div class="sum-row"><span>მიწოდება</span><span data-co-delivery></span></div>
+            <div class="sum-row sum-row--total"><span>სულ</span><strong data-co-total></strong></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast" data-toast role="status" aria-live="polite"></div>
+  <script src="/js/illustrations.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/checkout.js"></script>
+</body>
+</html>

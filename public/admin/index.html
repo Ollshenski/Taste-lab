@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taste Lab — მართვის პანელი</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <!-- LOGIN -->
+  <section class="login" data-login hidden>
+    <form class="login__card" data-login-form>
+      <img src="/assets/mark.svg" alt="" width="90">
+      <h1><span class="o">Taste</span> Lab</h1>
+      <p class="mono muted">ADMIN · LABORATORY CONTROL</p>
+      <label class="field"><span>პაროლი</span><input type="password" name="password" required autocomplete="current-password" autofocus></label>
+      <p class="error" data-login-error role="alert"></p>
+      <button class="btn btn--primary btn--block" type="submit">შესვლა</button>
+    </form>
+  </section>
+
+  <!-- APP -->
+  <div class="app" data-app hidden>
+    <aside class="side">
+      <a href="/" class="side__brand" target="_blank" rel="noopener"><img src="/assets/mark.svg" alt="" width="40"><span><span class="o">Taste</span> Lab</span></a>
+      <nav class="side__nav" data-nav>
+        <a href="#dashboard" data-view="dashboard"><i>◉</i> დაშბორდი</a>
+        <a href="#orders" data-view="orders"><i>▤</i> შეკვეთები <b class="pill" data-new-orders hidden></b></a>
+        <a href="#products" data-view="products"><i>◆</i> პროდუქტები</a>
+        <a href="#content" data-view="content"><i>✎</i> საიტის კონტენტი</a>
+        <a href="#settings" data-view="settings"><i>⚙</i> პარამეტრები</a>
+        <a href="#subscribers" data-view="subscribers"><i>✉</i> გამომწერები</a>
+        <a href="#security" data-view="security"><i>🔒</i> პაროლი</a>
+      </nav>
+      <div class="side__foot">
+        <a href="/" target="_blank" rel="noopener" class="btn btn--ghost btn--sm btn--block">საიტის ნახვა ↗</a>
+        <button class="btn btn--ghost btn--sm btn--block" type="button" data-logout>გასვლა</button>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="banner" data-default-pw hidden>⚠️ თქვენ იყენებთ საწყის პაროლს. <a href="#security">შეცვალეთ ახლავე →</a></div>
+      <div data-view-root></div>
+    </main>
+  </div>
+
+  <div class="drawer-wrap" data-drawer hidden>
+    <div class="drawer-bg" data-drawer-close></div>
+    <div class="drawer" data-drawer-body></div>
+  </div>
+  <div class="toast" data-toast role="status" aria-live="polite"></div>
+
+  <script src="/js/illustrations.js"></script>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

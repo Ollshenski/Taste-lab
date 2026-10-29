@@ -60,11 +60,12 @@
 
   $('[data-login-form]').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const form = e.currentTarget;
     const err = $('[data-login-error]');
     err.textContent = '';
     try {
-      await api('/admin/login', { method: 'POST', body: { password: e.currentTarget.password.value } });
-      e.currentTarget.reset();
+      await api('/admin/login', { method: 'POST', body: { password: form.password.value } });
+      form.reset();
       await boot();
     } catch (ex) {
       err.textContent = ex.message;
@@ -108,7 +109,7 @@
   }
   window.addEventListener('hashchange', () => db && route());
 
-  const VIEWS = { dashboard, orders, products, content, settings, subscribers, security };
+  const VIEWS = { dashboard, orders, products, content, params: settings, subscribers, security };
 
   /* -------------------------------------------------------- dashboard */
 
@@ -610,11 +611,12 @@
       </form>`;
     $('[data-pw-form]').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const f = Object.fromEntries(new FormData(e.currentTarget));
+      const form = e.currentTarget;
+      const f = Object.fromEntries(new FormData(form));
       if (f.next !== f.repeat) return toast('ახალი პაროლები არ ემთხვევა');
       try {
         await api('/admin/password', { method: 'POST', body: f });
-        e.currentTarget.reset();
+        form.reset();
         $('[data-default-pw]').hidden = true;
         toast('პაროლი შეიცვალა ✓');
       } catch (ex) {

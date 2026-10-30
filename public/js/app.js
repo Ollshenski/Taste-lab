@@ -482,7 +482,25 @@
     { k: 'apple', c: '#7BC043', x: 58, y: 80, s: 64, d: 0.9 },
   ];
 
+  // Up to three products with photos, fanned out in the hero; featured ones first.
+  function renderHeroPacks() {
+    const withImg = site.products.filter((p) => p.image);
+    const ranked = [...withImg.filter((p) => p.featured), ...withImg.filter((p) => !p.featured)];
+    // Prefer one product per category so different brands show up together.
+    const list = ranked.filter((p, i) => ranked.findIndex((q) => q.category === p.category) === i);
+    for (const p of ranked) if (list.length < 3 && !list.includes(p)) list.push(p);
+    list.splice(3);
+    const picks = list.length ? list : site.products.slice(0, 3);
+    // Middle slot gets the first pick.
+    const order = [picks[1], picks[0], picks[2]].filter(Boolean);
+    $('[data-hero-packs]').innerHTML = order.map((p) => {
+      const slot = p === picks[0] ? 0 : p === picks[1] ? 1 : 2;
+      return `<button type="button" class="pack pack--${slot}" data-open="${esc(p.id)}" aria-label="${esc(p.name)}">${visual(p)}</button>`;
+    }).join('');
+  }
+
   function setupHero() {
+    renderHeroPacks();
     const wrap = $('[data-floaters]');
     wrap.innerHTML = FLOATERS.map((f, i) => `
       <button type="button" class="floater" tabindex="-1" style="--x:${f.x}%;--y:${f.y}%;--s:${f.s}px;--d:${f.d}s;--depth:${(i % 3) + 1}" data-floater>

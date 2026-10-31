@@ -245,6 +245,24 @@ app.post('/api/subscribe', (req, res) => {
 
 const formBody = express.urlencoded({ extended: false, limit: '50kb' });
 
+// Asks Flitt directly about a card order that is still waiting for a result.
+async function refreshPayment(order) {
+  const result = await payments.fetchStatus(order.paymentRef);
+  if (!result) throw new Error('invalid status signature');
+  return applyPayment(result);
+}
+
+// Safety net for lost callbacks and abandoned payment pages: every 5 minutes,
+// re-check card orders from the last 2 days that are still pending.
+function reconcilePayments() {
+  if (!payments.configured()) return;
+  const now = Date.now();
+  const pending = store.read().orders.filter((o) => o.paymentRef && o.paymentStatus === 'pending' && o.status === 'new'
+    && now - Date.parse(o.createdAt) > 2 * 60 * 1000 && now - Date.parse(o.createdAt) < 2 * 24 * 3600 * 1000);
+  pending.reduce((chain, o) => chain.then(() => refreshPayment(o).catch((e) => console.warn('reconcile', o.number, e.message))), Promise.resolve());
+}
+setInterval(reconcilePayments, 5 * 60 * 1000).unref();
+
 // Server-to-server notification from Flitt.
 app.post('/api/payments/callback', formBody, (req, res) => {
   const result = payments.parseResult(req.body);
@@ -371,6 +389,16 @@ admin.put('/orders/:id', (req, res) => {
   });
   if (!order) return res.status(404).json({ error: 'not found' });
   res.json(order);
+});
+
+admin.post('/orders/:id/check-payment', async (req, res) => {
+  const order = store.read().orders.find((x) => x.id === req.params.id);
+  if (!order || !order.paymentRef) return res.status(404).json({ error: 'ეს შეკვეთა ბარათით არ არის გადახდილი.' });
+  try {
+    res.json(await refreshPayment(order));
+  } catch (err) {
+    res.status(502).json({ error: 'Flitt-თან შემოწმება ვერ მოხერხდა: ' + err.message });
+  }
 });
 
 admin.delete('/orders/:id', (req, res) => {

@@ -253,6 +253,7 @@
         </div>
         <div class="save-bar" style="position:static">
           <button class="btn btn--danger" type="button" data-del-order>წაშლა</button>
+          ${o.paymentRef ? '<button class="btn" type="button" data-check-payment>გადახდის შემოწმება Flitt-ში</button>' : ''}
           <button class="btn btn--primary" type="submit">შენახვა</button>
         </div>
       </form>`);
@@ -263,6 +264,16 @@
       closeDrawer();
       route();
       toast('შეკვეთა განახლდა ✓');
+    });
+    $('[data-check-payment]')?.addEventListener('click', async () => {
+      try {
+        const updated = await api('/admin/orders/' + o.id + '/check-payment', { method: 'POST' });
+        await reload();
+        openOrder(o.id);
+        toast(`Flitt: ${updated.flittStatus || '—'} · ${PAY_STATUS[updated.paymentStatus]}`);
+      } catch (ex) {
+        toast(ex.message);
+      }
     });
     $('[data-del-order]').addEventListener('click', async () => {
       if (!confirm(`წავშალო შეკვეთა ${o.number}? ეს მოქმედება შეუქცევადია.`)) return;

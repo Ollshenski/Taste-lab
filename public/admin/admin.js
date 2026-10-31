@@ -233,6 +233,7 @@
           <dt>ტელეფონი</dt><dd><a href="tel:${esc(o.customer.phone)}">${esc(o.customer.phone)}</a></dd>
           ${o.customer.email ? `<dt>ელ-ფოსტა</dt><dd><a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a></dd>` : ''}
           <dt>მისამართი</dt><dd>${esc(o.customer.city)}, ${esc(o.customer.address)}</dd>
+          ${o.paymentRef ? `<dt>Flitt</dt><dd class="mono">${esc(o.paymentRef)}${o.paymentId ? ' · ID ' + esc(o.paymentId) : ''}${o.flittStatus ? ' · ' + esc(o.flittStatus) : ''}</dd>` : ''}
           ${o.customer.note ? `<dt>კომენტარი</dt><dd>${esc(o.customer.note)}</dd>` : ''}
         </dl>
       </div>
@@ -553,7 +554,9 @@
         <div class="card"><h2>გადახდის მეთოდები</h2>
           <label class="check" style="margin-bottom:12px"><input type="checkbox" name="cashOnDelivery" ${s.cashOnDelivery ? 'checked' : ''}> გადახდა მიტანისას</label>
           <label class="check"><input type="checkbox" name="onlinePayments" ${s.onlinePayments ? 'checked' : ''}> ონლაინ გადახდა ბარათით</label>
-          <p class="muted" style="font-size:13px;margin:10px 0 0">⚠️ ონლაინ გადახდა ჩაირთვება მას შემდეგ, რაც ბანკის გადახდის სისტემას დავაკავშირებთ (lib/payments.js).</p>
+          <p class="muted" style="font-size:13px;margin:10px 0 0">${db.paymentsConfigured
+            ? '✅ Flitt დაკავშირებულია. ჩართეთ „ონლაინ გადახდა“, რომ მომხმარებლებმა ბარათით გადაიხადონ.'
+            : '⚠️ Flitt ჯერ არ არის დაკავშირებული: სერვერზე საჭიროა FLITT_MERCHANT_ID, FLITT_SECRET_KEY და PUBLIC_URL. მანამდე ბარათით გადახდა საიტზე არ გამოჩნდება.'}</p>
         </div>
         <div class="card"><h2>კონტაქტი</h2><div class="form-grid">
           ${input('phone', 'ტელეფონი')}${input('email', 'ელ-ფოსტა', 'email')}

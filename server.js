@@ -20,6 +20,8 @@ auth.init();
 
 const app = express();
 app.disable('x-powered-by');
+// Behind a reverse proxy (Caddy, Nginx, Render…) so req.secure and req.ip are correct.
+if (process.env.TRUST_PROXY) app.set('trust proxy', Number(process.env.TRUST_PROXY) || 1);
 app.use(express.json({ limit: '200kb' }));
 
 app.use((req, res, next) => {
@@ -101,7 +103,8 @@ app.get('/api/site', (req, res) => {
   const db = store.read();
   res.json({
     content: db.content,
-    settings: db.settings,
+    // Card payment is only offered once Flitt credentials are set on the server.
+    settings: { ...db.settings, onlinePayments: Boolean(db.settings.onlinePayments) && payments.configured() },
     products: db.products.filter((p) => p.active).map(publicProduct),
   });
 });
@@ -156,6 +159,7 @@ app.post('/api/orders', (req, res) => {
 
   const order = store.update((d) => {
     d.counters.order = (d.counters.order || 1000) + 1;
+    const number = 'TL-' + d.counters.order;
     for (const item of items) {
       if (item.type !== 'product') continue;
       const p = d.products.find((x) => x.id === item.id);
@@ -163,11 +167,12 @@ app.post('/api/orders', (req, res) => {
     }
     const o = {
       id: crypto.randomUUID(),
-      number: 'TL-' + d.counters.order,
+      number,
       createdAt: new Date().toISOString(),
       status: 'new',
       paymentMethod,
       paymentStatus: 'pending',
+      paymentRef: paymentMethod === 'card' ? payments.paymentRef({ number }) : undefined,
       customer,
       items,
       ...computeTotals(items, d.settings),
@@ -177,13 +182,57 @@ app.post('/api/orders', (req, res) => {
   });
 
   payments
-    .createPayment(order, db.settings)
+    .createPayment(order)
     .then((payment) => res.status(201).json({ order: { number: order.number, total: order.total }, payment }))
     .catch((err) => {
-      console.error('payment init failed', err);
-      res.status(201).json({ order: { number: order.number, total: order.total }, payment: null });
+      // The customer chose to pay by card, so don't keep an order nobody can pay for.
+      console.error('payment init failed', order.number, err.message);
+      store.update((d) => {
+        const o = d.orders.find((x) => x.id === order.id);
+        if (o) cancelOrder(d, o, 'გადახდის გვერდი ვერ შეიქმნა');
+      });
+      res.status(502).json({ error: 'ონლაინ გადახდა ახლა ვერ ხერხდება. სცადეთ თავიდან ან აირჩიეთ „გადახდა მიტანისას“.' });
     });
 });
+
+// Puts stock back (once) and cancels an order that was never paid.
+function cancelOrder(d, o, reason) {
+  if (!o.restocked) {
+    for (const item of o.items) {
+      const p = item.type === 'product' && d.products.find((x) => x.id === item.id);
+      if (p) p.stock += item.qty;
+    }
+    o.restocked = true;
+  }
+  o.status = 'cancelled';
+  if (reason) o.adminNote = [o.adminNote, reason].filter(Boolean).join('\n');
+}
+
+// Applies a verified Flitt result to its order. Safe to call repeatedly:
+// Flitt reports each payment both to the callback and via the browser return.
+function applyPayment(result) {
+  return store.update((d) => {
+    const o = d.orders.find((x) => x.paymentRef && x.paymentRef === result.ref);
+    if (!o) return null;
+    o.paymentId = result.paymentId || o.paymentId;
+    o.flittStatus = result.flittStatus;
+    if (result.status === 'paid') {
+      if (result.amount !== Math.round(o.total * 100)) {
+        console.error('Flitt amount mismatch', o.number, result.amount, o.total);
+        o.adminNote = [o.adminNote, `⚠️ გადახდილი თანხა (${result.amount / 100}) არ ემთხვევა შეკვეთას`].filter(Boolean).join('\n');
+        return o;
+      }
+      o.paymentStatus = 'paid';
+      if (o.status === 'new') o.status = 'paid';
+    } else if (result.status === 'failed' && o.paymentStatus !== 'paid') {
+      o.paymentStatus = 'failed';
+      if (o.status === 'new') cancelOrder(d, o, 'ონლაინ გადახდა არ შედგა');
+    } else if (result.status === 'refunded') {
+      o.paymentStatus = 'refunded';
+    }
+    return o;
+  });
+}
 
 app.post('/api/subscribe', (req, res) => {
   const email = str(req.body?.email, 120).toLowerCase();
@@ -194,19 +243,29 @@ app.post('/api/subscribe', (req, res) => {
   res.json({ ok: true });
 });
 
-// Webhook endpoint for the future payment provider (BOG / TBC / etc).
-app.post('/api/payments/callback', (req, res) => {
-  const result = payments.handleCallback(req);
-  if (!result) return res.status(400).json({ error: 'invalid callback' });
-  store.update((d) => {
-    const o = d.orders.find((x) => x.number === result.orderNumber);
-    if (o) {
-      o.paymentStatus = result.paid ? 'paid' : 'failed';
-      if (result.paid && o.status === 'new') o.status = 'paid';
-    }
-  });
-  res.json({ ok: true });
+const formBody = express.urlencoded({ extended: false, limit: '50kb' });
+
+// Server-to-server notification from Flitt.
+app.post('/api/payments/callback', formBody, (req, res) => {
+  const result = payments.parseResult(req.body);
+  if (!result) {
+    console.warn('Flitt callback with invalid signature');
+    return res.status(400).send('invalid signature');
+  }
+  const o = applyPayment(result);
+  if (!o) console.warn('Flitt callback for unknown order', result.ref);
+  res.send('OK');
 });
+
+// Flitt sends the customer's browser back here (as a form POST) after paying.
+function paymentReturn(req, res) {
+  const result = payments.parseResult(req.method === 'POST' ? req.body : req.query);
+  const o = result && applyPayment(result);
+  const qs = o ? `order=${encodeURIComponent(o.number)}&payment=${o.paymentStatus}` : 'payment=unknown';
+  res.redirect(303, '/checkout?' + qs);
+}
+app.post('/payment/return', formBody, paymentReturn);
+app.get('/payment/return', paymentReturn);
 
 /* -------------------------------------------------------------- admin API */
 
@@ -253,8 +312,8 @@ admin.post('/password', (req, res) => {
 });
 
 admin.get('/data', (req, res) => {
-  const db = store.read();
-  res.json({ ...db, statuses: ORDER_STATUSES });
+  const { auth: _auth, ...db } = store.read();
+  res.json({ ...db, statuses: ORDER_STATUSES, paymentsConfigured: payments.configured() });
 });
 
 admin.post('/products', (req, res) => {

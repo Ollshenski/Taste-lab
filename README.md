@@ -35,16 +35,35 @@ server.js            Express სერვერი და API
 lib/store.js         JSON მონაცემთა ბაზა (data/db.json)
 lib/seed.js          საწყისი პროდუქტები და კონტენტი
 lib/auth.js          ადმინის ავტორიზაცია
-lib/payments.js      გადახდის სისტემის ადაპტერი (ჯერ არ არის მიერთებული)
+lib/payments.js      Flitt-ის გადახდის ინტეგრაცია
 public/              საიტი (HTML/CSS/JS, build არ სჭირდება)
 public/admin/        მართვის პანელი
 data/                ბაზა და ატვირთული ფოტოები (git-ში არ ინახება — გააკეთეთ ბექაპი)
 ```
 
-## გადახდის სისტემა
+## ონლაინ გადახდა (Flitt)
 
-შეკვეთები ახლა „გადახდა მიტანისას“ რეჟიმით მუშაობს. ბანკის (BOG / TBC / Flitt) მიერთებისას საჭიროა მხოლოდ
-`lib/payments.js`-ში `createPayment()` და `handleCallback()` ფუნქციების შევსება და პანელში „ონლაინ გადახდის“ ჩართვა.
+ინტეგრაცია: `lib/payments.js`. მომხმარებელი გადადის Flitt-ის გადახდის გვერდზე, შედეგს Flitt აგზავნის ორჯერ
+(სერვერზე `/api/payments/callback` და მომხმარებლის ბრაუზერით `/payment/return`), ორივე ხელმოწერით მოწმდება.
+
+- გადახდილი → შეკვეთა „გადახდილი“
+- უარყოფილი/ვადაგასული → შეკვეთა უქმდება, მარაგი ბრუნდება, მომხმარებელს კალათა რჩება
+- თანხა თუ არ ემთხვევა შეკვეთას → შეკვეთა არ მოინიშნება გადახდილად და ადმინში ჩნდება გაფრთხილება
+
+ჩართვა: სერვერზე დააყენეთ `FLITT_MERCHANT_ID`, `FLITT_SECRET_KEY`, `PUBLIC_URL`, შემდეგ ადმინში
+„პარამეტრები → ონლაინ გადახდა ბარათით“. სანამ ცვლადები არ არის, ბარათით გადახდა საიტზე არ ჩანს.
+
+### ლოკალური ტესტი Flitt-ის გარეშე
+
+```bash
+node scripts/mock-flitt.js
+```
+
+```bash
+FLITT_MERCHANT_ID=1549901 FLITT_SECRET_KEY=test PUBLIC_URL=http://localhost:3000 FLITT_API_URL=http://localhost:4000 npm start
+```
+
+Mock აჩვენებს გვერდს ღილაკებით „Pay“ / „Decline“ და აბრუნებს ხელმოწერილ შედეგს ისევე, როგორც Flitt.
 
 ## დემო ვერსია (სერვერის გარეშე)
 
@@ -55,6 +74,24 @@ node scripts/build-demo.js
 ქმნის `demo-dist/` საქაღალდეს: თვითკმარი HTML გვერდები, სადაც API ჩანაცვლებულია `demo/demo-api.js`-ით და მონაცემები
 ვიზიტორის ბრაუზერში ინახება. გამოდგება დიზაინისა და ფუნქციონალის საჩვენებლად; ნამდვილი მაღაზიისთვის საჭიროა სერვერი.
 
-## ჰოსტინგი
+## პროდაქშენზე გაშვება (VPS + Docker)
 
-საჭიროა სერვერი მუდმივი დისკით (VPS, Render, Railway, Fly.io და ა.შ.), რადგან ბაზა და ფოტოები `data/` საქაღალდეში ინახება.
+საჭიროა Linux სერვერი (Ubuntu, 1–2 GB RAM) Docker-ით და დომენის DNS:
+`A` ჩანაწერი `@` და `www` → სერვერის IP.
+
+```bash
+git clone https://github.com/Ollshenski/Taste-lab.git && cd Taste-lab
+```
+
+```bash
+cp .env.example .env && nano .env
+```
+
+```bash
+docker compose up -d --build
+```
+
+Caddy ავტომატურად აიღებს HTTPS სერტიფიკატს დომენისთვის. ბაზა და ფოტოები ინახება Docker volume-ში `shop-data`
+(ბექაპი: `docker compose cp app:/data ./backup`). განახლება: `git pull && docker compose up -d --build`.
+
+Flitt-ის მერჩანტის პორტალში საიტის მისამართად მიუთითეთ თქვენი დომენი.

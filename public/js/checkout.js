@@ -6,9 +6,13 @@
 
   let site;
 
+  const params = new URLSearchParams(location.search);
+  const returned = params.get('payment');
+
   window.TL.loadSite().then((data) => {
     site = data;
     cart.reconcile();
+    if (returned && handleReturn(returned, params.get('order'))) return;
     if (!cart.totals().count) return renderEmpty();
     renderPayments();
     renderSummary();
@@ -77,11 +81,13 @@
       });
       const out = await res.json();
       if (!res.ok) throw new Error(out.error || 'შეცდომა');
-      cart.clear();
       if (out.payment?.redirectUrl) {
+        // Keep the cart until the payment is confirmed; Flitt sends the customer back here.
+        btn.textContent = 'გადამისამართება გადახდაზე…';
         location.href = out.payment.redirectUrl;
         return;
       }
+      cart.clear();
       success(out.order);
     } catch (ex) {
       err.textContent = ex.message || 'შეკვეთა ვერ გაიგზავნა. სცადეთ თავიდან.';
@@ -90,7 +96,21 @@
     }
   }
 
-  function success(order) {
+  // Customer is back from the Flitt payment page. Returns true when the page is fully handled.
+  function handleReturn(status, number) {
+    history.replaceState(null, '', location.pathname);
+    if (status === 'paid' || status === 'pending') {
+      cart.clear();
+      success({ number }, status);
+      return true;
+    }
+    toast(status === 'failed'
+      ? 'გადახდა არ შედგა. შეკვეთა გაუქმდა — შეგიძლიათ სცადოთ თავიდან.'
+      : 'გადახდის სტატუსი ვერ დადასტურდა. თუ თანხა ჩამოგეჭრათ, დაგვიკავშირდით.');
+    return false;
+  }
+
+  function success(order, payment) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     $('[data-co-root]').innerHTML = `
       <div class="success">
@@ -98,7 +118,7 @@
         <p class="eyebrow mono">EXPERIMENT SUCCESSFUL ✓</p>
         <h1>მადლობა! შეკვეთა მიღებულია</h1>
         <div class="order-no">${esc(order.number)}</div>
-        <p>სულ გადასახდელი: <b>${money(order.total)}</b>.<br>ჩვენი გუნდი მალე დაგიკავშირდება ტელეფონით მიწოდების დასაზუსტებლად.</p>
+        <p>${payment === 'paid' ? '✅ გადახდა წარმატებით შესრულდა.' : payment === 'pending' ? '⏳ გადახდა მუშავდება — დადასტურებისთანავე დაგიკავშირდებით.' : `სულ გადასახდელი: <b>${money(order.total)}</b>.`}<br>ჩვენი გუნდი მალე დაგიკავშირდება ტელეფონით მიწოდების დასაზუსტებლად.</p>
         <a href="/" class="btn btn--primary btn--lg">მთავარზე დაბრუნება</a>
       </div>`;
     confetti();

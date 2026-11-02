@@ -113,3 +113,11 @@ Caddy ავტომატურად აიღებს HTTPS სერტი
 (ბექაპი: `docker compose cp app:/data ./backup`). განახლება: `git pull && docker compose up -d --build`.
 
 Flitt-ის მერჩანტის პორტალში საიტის მისამართად მიუთითეთ თქვენი დომენი.
+
+### DNS (Hetzner)
+
+ზონა `taste-lab.ge` Hetzner-ის DNS-ზეა: `A` `@` და `www` → სერვერის IP, ფოსტა — Zoho (MX `mx.zoho.eu.` 10,
+`mx2.zoho.eu.` 20, `mx3.zoho.eu.` 50, SPF `v=spf1 include:zohomail.eu ~all`, DKIM `zmail._domainkey`, `_dmarc`).
+
+⚠️ Hetzner-ში MX/CNAME მნიშვნელობას ბოლოში **წერტილი** სჭირდება (`mx.zoho.eu.`), თორემ ის დომენის
+ფარდობით მისამართად იქცევა (`mx.zoho.eu.taste-lab.ge`) და შემომავალი ფოსტა ჩერდება.

@@ -12,7 +12,7 @@
 
   const D = {
     ka: {
-      'meta.title': 'Taste Lab — სუბლიმირებული სნექების ლაბორატორია',
+      'meta.title': 'Taste Lab — ჯანსაღი და ფუნქციური სნექები',
       'meta.description': 'Taste Lab — სუბლიმირებული (freeze-dried) მაწონი, იოგურტი, ხილი და ტკბილეული. შეუკვეთე ონლაინ.',
       skip: 'გადასვლა მაღაზიაზე', home: 'Taste Lab — მთავარი', announce: 'განცხადება',
       'nav.label': 'მთავარი ნავიგაცია', 'nav.shop': 'მაღაზია', 'nav.lab': 'ლაბორატორია', 'nav.about': 'ჩვენ შესახებ', 'nav.faq': 'კითხვები',
@@ -68,7 +68,7 @@
       '404.title': 'ეს ნიმუში ლაბორატორიაში არ გვაქვს', '404.text': 'გვერდი, რომელსაც ეძებ, არ არსებობს ან გადატანილია.',
     },
     en: {
-      'meta.title': 'Taste Lab — Freeze-Dried Snack Laboratory',
+      'meta.title': 'Taste Lab — Healthy & Functional Snacks',
       'meta.description': 'Taste Lab — freeze-dried matsoni, yogurt, fruit and sweets. Order online with delivery across Georgia.',
       skip: 'Skip to shop', home: 'Taste Lab — home', announce: 'Announcement',
       'nav.label': 'Main navigation', 'nav.shop': 'Shop', 'nav.lab': 'The Lab', 'nav.about': 'About us', 'nav.faq': 'FAQ',
@@ -122,7 +122,7 @@
       '404.title': 'This specimen is not in our lab', '404.text': 'The page you are looking for does not exist or has moved.',
     },
     ru: {
-      'meta.title': 'Taste Lab — лаборатория сублимированных снеков',
+      'meta.title': 'Taste Lab — полезные и функциональные снеки',
       'meta.description': 'Taste Lab — сублимированные мацони, йогурт, фрукты и сладости. Заказ онлайн с доставкой по Грузии.',
       skip: 'Перейти в магазин', home: 'Taste Lab — главная', announce: 'Объявление',
       'nav.label': 'Основная навигация', 'nav.shop': 'Магазин', 'nav.lab': 'Лаборатория', 'nav.about': 'О нас', 'nav.faq': 'Вопросы',

@@ -29,7 +29,8 @@ function build(rel, { home, embedded }) {
     .replace(/<link rel="stylesheet" href="\/([^"]+\.css)">/g, (_, f) => `<style>\n${read(f)}\n</style>`)
     .replace(/<script src="\/js\/illustrations\.js"><\/script>/, () => `<script>\n${demoApi}\n</script>\n<script src="/js/illustrations.js"></script>`)
     .replace(/<script src="\/([^"]+\.js)"><\/script>/g, (_, f) => `<script>\n${read(f).replace(/<\/script/g, '<\\/script')}\n</script>`)
-    .replace(/(src|href)="\/(assets\/[^"]+)"/g, (_, a, f) => `${a}="${dataUri(f)}"`)
+    .replace(/(["'])\/(assets\/[\w./-]+\.(?:svg|png|jpg|webp))\1/g, (_, q, f) => `${q}${dataUri(f)}${q}`)
+    .replace(/href="\/(terms|privacy|contact)"/g, (_, page) => `href="${home.replace('index.html', '')}${page}.html"`)
     .replace(/href="\/checkout"/g, 'href="checkout.html"')
     .replace(/href="\/admin"/g, `href="${home.replace('index.html', '')}admin/index.html"`)
     .replace(/href="\/(#[^"]*)?"/g, (_, h) => `href="${home}${h || ''}"`)
@@ -52,14 +53,17 @@ fs.mkdirSync(path.join(OUT, 'admin'), { recursive: true });
 
 let index = build('index.html', { home: 'index.html', embedded: true });
 index = index.replace(
-  '<span>Made with 🧪 in Georgia</span>',
-  '<span>Made with 🧪 in Georgia · <a href="admin/index.html" style="display:inline;color:var(--orange)">ადმინ პანელი (დემო)</a></span>'
+  '<a href="contact.html">ყველა კონტაქტი →</a>',
+  '<a href="contact.html">ყველა კონტაქტი →</a><a href="admin/index.html" style="color:var(--orange)">ადმინ პანელი (დემო)</a>'
 );
 fs.writeFileSync(path.join(OUT, 'index.html'), index);
 fs.writeFileSync(path.join(OUT, 'checkout.html'), patchJs(build('checkout.html', { home: 'index.html' }), 'index.html'));
 fs.writeFileSync(path.join(OUT, 'admin', 'index.html'), patchJs(build('admin/index.html', { home: '../index.html' }), '../index.html'));
+for (const page of ['terms', 'privacy', 'contact']) {
+  fs.writeFileSync(path.join(OUT, page + '.html'), patchJs(build(page + '.html', { home: 'index.html' }), 'index.html'));
+}
 
-for (const f of ['index.html', 'checkout.html', 'admin/index.html']) {
+for (const f of ['index.html', 'checkout.html', 'admin/index.html', 'terms.html', 'privacy.html', 'contact.html']) {
   const html = fs.readFileSync(path.join(OUT, f), 'utf8');
   const leftovers = html.match(/(src|href)="\/(?!\/)[^"]*"/g);
   console.log(f.padEnd(18), (html.length / 1024).toFixed(0) + ' KB', leftovers ? 'absolute links left: ' + leftovers.join(' ') : '');

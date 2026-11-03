@@ -12,6 +12,7 @@
   window.TL.loadSite().then((data) => {
     site = data;
     cart.reconcile();
+    $('[data-site-footer]').innerHTML = window.TLFooter(site.settings);
     if (returned && handleReturn(returned, params.get('order'))) return;
     if (!cart.totals().count) return renderEmpty();
     renderPayments();
@@ -33,7 +34,7 @@
   function renderPayments() {
     const s = site.settings;
     const opts = [
-      { id: 'card', title: 'ბარათით ონლაინ', sub: s.onlinePayments ? 'Visa / Mastercard / Apple Pay' : 'მალე დაემატება', enabled: s.onlinePayments },
+      { id: 'card', title: 'ბარათით ონლაინ', sub: s.onlinePayments ? 'Visa / Mastercard / Google Pay / Apple Pay' : 'მალე დაემატება', enabled: s.onlinePayments, logos: true },
       { id: 'cash', title: 'გადახდა მიტანისას', sub: 'ნაღდი ან ბარათით კურიერთან', enabled: s.cashOnDelivery !== false },
     ];
     const first = opts.find((o) => o.enabled);
@@ -41,6 +42,7 @@
       <label class="pay-opt ${o.enabled ? '' : 'is-disabled'}">
         <input type="radio" name="payment" value="${o.id}" ${o.enabled ? '' : 'disabled'} ${o === first ? 'checked' : ''}>
         <span><b>${o.title}</b><small>${o.sub}</small></span>
+        ${o.logos ? `<span class="pay-opt__logos">${['/assets/pay/visa.svg', '/assets/pay/mastercard.svg', '/assets/pay/googlepay.svg', '/assets/pay/applepay.svg'].map((src) => `<img src="${src}" alt="" width="38" height="24">`).join('')}</span>` : ''}
       </label>`).join('');
   }
 
@@ -65,6 +67,7 @@
     const data = Object.fromEntries(new FormData(form));
     if (!data.name.trim() || !data.address.trim()) return (err.textContent = 'გთხოვთ შეავსოთ სახელი და მისამართი.');
     if (!/^[+\d\s()-]{7,20}$/.test(data.phone.trim())) return (err.textContent = 'გთხოვთ მიუთითოთ სწორი ტელეფონის ნომერი.');
+    if (!form.agree.checked) return (err.textContent = 'შეკვეთისთვის საჭიროა მომსახურების პირობებზე თანხმობა.');
 
     const btn = $('[data-co-submit]');
     btn.disabled = true;
@@ -76,6 +79,7 @@
         body: JSON.stringify({
           customer: { name: data.name, phone: data.phone, email: data.email, city: data.city, address: data.address, note: data.note },
           paymentMethod: data.payment,
+          agree: true,
           items: cart.raw().map((l) => (l.type === 'mix' ? { type: 'mix', parts: l.parts, qty: l.qty } : { id: l.id, qty: l.qty })),
         }),
       });

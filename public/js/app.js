@@ -468,7 +468,7 @@
     email.href = 'mailto:' + s.email;
     const socials = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tiktok', 'TikTok']].filter(([k]) => /^https?:\/\//.test(s[k] || ''));
     $('[data-socials]').innerHTML = socials.map(([k, l]) => `<a href="${esc(s[k])}" target="_blank" rel="noopener">${l} ↗</a>`).join('');
-    $('[data-year]').textContent = new Date().getFullYear();
+    $('[data-site-footer]').innerHTML = window.TLFooter(s);
   }
 
   /* --------------------------------------------------------------- hero */

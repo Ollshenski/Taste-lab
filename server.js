@@ -123,6 +123,9 @@ app.post('/api/orders', (req, res) => {
   if (!customer.name || !/^[+\d\s()-]{7,20}$/.test(customer.phone) || !customer.address) {
     return res.status(400).json({ error: 'გთხოვთ შეავსოთ სახელი, ტელეფონი და მისამართი.' });
   }
+  if (body.agree !== true) {
+    return res.status(400).json({ error: 'შეკვეთისთვის საჭიროა მომსახურების პირობებზე თანხმობა.' });
+  }
 
   const rawItems = Array.isArray(body.items) ? body.items.slice(0, 50) : [];
   const items = [];
@@ -438,6 +441,9 @@ admin.put('/settings', (req, res) => {
     s.instagram = str(b.instagram, 200);
     s.facebook = str(b.facebook, 200);
     s.tiktok = str(b.tiktok, 200);
+    s.companyName = str(b.companyName, 120);
+    s.companyId = str(b.companyId, 30);
+    s.legalAddress = str(b.legalAddress, 200);
     s.cashOnDelivery = Boolean(b.cashOnDelivery);
     s.onlinePayments = Boolean(b.onlinePayments);
     return s;

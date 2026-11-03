@@ -52,6 +52,10 @@
           <section class="panel">
             <h2><span class="n">03</span> გადახდა</h2>
             <div class="pay-opts" data-pay-opts></div>
+            <label class="agree">
+              <input type="checkbox" name="agree" id="f-agree" required>
+              <span>ვეთანხმები <a href="/terms" target="_blank">მომსახურების პირობებს</a> და <a href="/privacy" target="_blank">კონფიდენციალურობის პოლიტიკას</a></span>
+            </label>
             <p class="form-error" data-co-error role="alert"></p>
             <button class="btn btn--primary btn--lg btn--block" type="submit" data-co-submit>შეკვეთის დადასტურება</button>
           </section>
@@ -69,9 +73,11 @@
     </div>
   </main>
 
+  <footer class="site-footer" data-site-footer></footer>
   <div class="toast" data-toast role="status" aria-live="polite"></div>
   <script src="/js/illustrations.js"></script>
   <script src="/js/common.js"></script>
+  <script src="/js/page.js"></script>
   <script src="/js/checkout.js"></script>
 </body>
 </html>

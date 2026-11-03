@@ -468,8 +468,10 @@
     testimonials: 'შეფასებები', name: 'სახელი', rating: 'რეიტინგი (1–5)',
     faq: 'ხშირად დასმული კითხვები', q: 'კითხვა', a: 'პასუხი',
     newsletter: 'გამოწერის ბლოკი',
+    pages: 'იურიდიული გვერდები', terms: 'მომსახურების პირობები (/terms)', privacy: 'კონფიდენციალურობის პოლიტიკა (/privacy)',
+    body: 'ტექსტი — „## “ სათაური, „- “ სიის პუნქტი; {{company}}, {{companyId}}, {{phone}}, {{email}} და სხვ. ივსება პარამეტრებიდან',
   };
-  const LONG = new Set(['subtitle', 'text', 'a', 'announcement']);
+  const LONG = new Set(['subtitle', 'text', 'a', 'announcement', 'body']);
 
   function content() {
     const draft = JSON.parse(JSON.stringify(db.content));
@@ -491,7 +493,7 @@
       if (typeof value === 'string' || typeof value === 'number') {
         const long = LONG.has(key) || String(value).length > 80;
         return `<label class="field" style="margin-bottom:12px"><span>${esc(label)}</span>${long
-          ? `<textarea data-path="${p}" rows="3">${esc(value)}</textarea>`
+          ? `<textarea data-path="${p}" rows="${key === 'body' ? 24 : 3}">${esc(value)}</textarea>`
           : `<input data-path="${p}" ${typeof value === 'number' ? 'type="number"' : ''} value="${esc(value)}">`}</label>`;
       }
       if (Array.isArray(value)) {
@@ -569,6 +571,10 @@
             ? '✅ Flitt დაკავშირებულია. ჩართეთ „ონლაინ გადახდა“, რომ მომხმარებლებმა ბარათით გადაიხადონ.'
             : '⚠️ Flitt ჯერ არ არის დაკავშირებული: სერვერზე საჭიროა FLITT_MERCHANT_ID, FLITT_SECRET_KEY და PUBLIC_URL. მანამდე ბარათით გადახდა საიტზე არ გამოჩნდება.'}</p>
         </div>
+        <div class="card"><h2>კომპანია (საჭიროა Flitt-ისთვის)</h2><div class="form-grid">
+          ${input('companyName', 'შპს დასახელება, მაგ. „შპს ტეისთ ლაბი“')}${input('companyId', 'საიდენთიფიკაციო კოდი')}
+          <div class="full">${input('legalAddress', 'იურიდიული მისამართი')}</div>
+        </div><p class="muted" style="font-size:13px;margin:10px 0 0">ჩანს გვერდებზე „კონტაქტი“, „მომსახურების პირობები“, „კონფიდენციალურობის პოლიტიკა“ და საიტის ქვედა ნაწილში.</p></div>
         <div class="card"><h2>კონტაქტი</h2><div class="form-grid">
           ${input('phone', 'ტელეფონი')}${input('email', 'ელ-ფოსტა', 'email')}
           ${input('address', 'მისამართი')}${input('hours', 'სამუშაო საათები')}

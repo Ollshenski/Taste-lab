@@ -9,6 +9,7 @@ const multer = require('multer');
 const store = require('./lib/store');
 const auth = require('./lib/auth');
 const payments = require('./lib/payments');
+const i18n = require('./lib/i18n');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -81,6 +82,12 @@ function sanitizeProduct(input, existing = {}) {
     badge: str(input.badge, 30),
     featured: Boolean(input.featured),
     active: input.active === undefined ? true : Boolean(input.active),
+    // Translations: { en: { name, tagline, … }, ru: { … } }; empty fields fall back to Georgian.
+    i18n: Object.fromEntries(i18n.LANGS.filter((l) => l !== 'ka').map((l) => {
+      const src = (input.i18n && typeof input.i18n === 'object' && input.i18n[l]) || (existing.i18n || {})[l] || {};
+      const lim = { name: 120, tagline: 160, description: 2000, ingredients: 500, badge: 30, weight: 30 };
+      return [l, Object.fromEntries(i18n.PRODUCT_FIELDS.map((f) => [f, str(src[f], lim[f])]))];
+    })),
     nutrition: {
       kcal: str(String(nutrition.kcal ?? ''), 20),
       protein: str(String(nutrition.protein ?? ''), 20),
@@ -101,17 +108,21 @@ function computeTotals(items, settings) {
 
 app.get('/api/site', (req, res) => {
   const db = store.read();
+  const lang = i18n.pickLang(req.query.lang);
+  const settings = i18n.localizeSettings(db.settings, lang);
   res.json({
-    content: db.content,
+    lang,
+    content: i18n.localizeContent(db, lang),
     // Card payment is only offered once Flitt credentials are set on the server.
-    settings: { ...db.settings, onlinePayments: Boolean(db.settings.onlinePayments) && payments.configured() },
-    products: db.products.filter((p) => p.active).map(publicProduct),
+    settings: { ...settings, onlinePayments: Boolean(db.settings.onlinePayments) && payments.configured() },
+    products: db.products.filter((p) => p.active).map((p) => publicProduct(i18n.localizeProduct(p, lang))),
   });
 });
 
 app.post('/api/orders', (req, res) => {
   const db = store.read();
   const body = req.body || {};
+  const lang = i18n.pickLang(body.lang);
   const customer = {
     name: str(body.customer?.name, 100),
     phone: str(body.customer?.phone, 30),
@@ -121,10 +132,10 @@ app.post('/api/orders', (req, res) => {
     note: str(body.customer?.note, 500),
   };
   if (!customer.name || !/^[+\d\s()-]{7,20}$/.test(customer.phone) || !customer.address) {
-    return res.status(400).json({ error: 'გთხოვთ შეავსოთ სახელი, ტელეფონი და მისამართი.' });
+    return res.status(400).json({ error: i18n.msg('fields', lang) });
   }
   if (body.agree !== true) {
-    return res.status(400).json({ error: 'შეკვეთისთვის საჭიროა მომსახურების პირობებზე თანხმობა.' });
+    return res.status(400).json({ error: i18n.msg('agree', lang) });
   }
 
   const rawItems = Array.isArray(body.items) ? body.items.slice(0, 50) : [];
@@ -150,11 +161,11 @@ app.post('/api/orders', (req, res) => {
     const product = db.products.find((p) => p.id === raw.id && p.active);
     if (!product) continue;
     if (product.stock < qty) {
-      return res.status(409).json({ error: `"${product.name}" — მარაგში მხოლოდ ${product.stock} ცალია.` });
+      return res.status(409).json({ error: i18n.msg('stock', lang, { name: i18n.localizeProduct(product, lang).name, n: product.stock }) });
     }
     items.push({ type: 'product', id: product.id, name: product.name, price: product.price, qty });
   }
-  if (!items.length) return res.status(400).json({ error: 'კალათა ცარიელია.' });
+  if (!items.length) return res.status(400).json({ error: i18n.msg('empty', lang) });
 
   const paymentMethod = payments.methods(db.settings).some((m) => m.id === body.paymentMethod && m.enabled)
     ? body.paymentMethod
@@ -175,6 +186,7 @@ app.post('/api/orders', (req, res) => {
       status: 'new',
       paymentMethod,
       paymentStatus: 'pending',
+      lang,
       paymentRef: paymentMethod === 'card' ? payments.paymentRef({ number }) : undefined,
       customer,
       items,
@@ -194,7 +206,7 @@ app.post('/api/orders', (req, res) => {
         const o = d.orders.find((x) => x.id === order.id);
         if (o) cancelOrder(d, o, 'გადახდის გვერდი ვერ შეიქმნა');
       });
-      res.status(502).json({ error: 'ონლაინ გადახდა ახლა ვერ ხერხდება. სცადეთ თავიდან ან აირჩიეთ „გადახდა მიტანისას“.' });
+      res.status(502).json({ error: i18n.msg('payment', lang) });
     });
 });
 
@@ -418,10 +430,17 @@ admin.delete('/subscribers/:email', (req, res) => {
   res.json({ ok: true });
 });
 
+// ?lang=en|ru saves a translation; without it the Georgian base content.
 admin.put('/content', (req, res) => {
+  const lang = i18n.pickLang(req.query.lang);
   const content = store.update((d) => {
-    d.content = store.mergeContent(d.content, req.body || {});
-    return d.content;
+    if (lang === 'ka') {
+      d.content = store.mergeContent(d.content, req.body || {});
+      return d.content;
+    }
+    d.contentI18n = d.contentI18n || {};
+    d.contentI18n[lang] = store.mergeContent(d.contentI18n[lang] || {}, req.body || {}, { blank: true });
+    return d.contentI18n[lang];
   });
   res.json(content);
 });
@@ -444,6 +463,9 @@ admin.put('/settings', (req, res) => {
     s.companyName = str(b.companyName, 120);
     s.companyId = str(b.companyId, 30);
     s.legalAddress = str(b.legalAddress, 200);
+    for (const l of ['en', 'ru']) {
+      for (const f of i18n.SETTING_FIELDS) s[`${f}_${l}`] = str(b[`${f}_${l}`], 200);
+    }
     s.cashOnDelivery = Boolean(b.cashOnDelivery);
     s.onlinePayments = Boolean(b.onlinePayments);
     return s;

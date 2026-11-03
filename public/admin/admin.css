@@ -1,7 +1,7 @@
 :root {
   --cream: #FDF3E8; --paper: #FFFBF6; --ink: #151515; --muted: #7A6F64; --orange: #F58220; --orange-soft: #FFE2C7;
   --line: rgba(21,21,21,.1); --green: #2E7D32; --red: #C62828; --blue: #1565C0;
-  --font: 'Outfit', 'Noto Sans Georgian', system-ui, sans-serif; --mono: 'Space Mono', 'Noto Sans Georgian', monospace;
+  --font: 'Outfit', 'Noto Sans Georgian', 'Noto Sans', system-ui, sans-serif; --mono: 'Space Mono', 'Noto Sans Georgian', 'Noto Sans', monospace;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--cream); font-size: 15px; line-height: 1.5; }
@@ -51,6 +51,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .banner { background: #FFF3CD; border: 2px solid var(--ink); border-radius: 14px; padding: 12px 18px; margin-bottom: 20px; font-weight: 600; }
 
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 6px; margin: -8px 0 18px; flex-wrap: wrap; }
+.tab { padding: 8px 16px; border-radius: 999px; border: 2px solid var(--ink); background: var(--paper); font-weight: 700; font-size: 14px; }
+.tab.is-on { background: var(--ink); color: var(--cream); }
 .page-head h1 { font-size: 30px; font-weight: 800; margin: 0; }
 .page-head p { margin: 4px 0 0; color: var(--muted); }
 

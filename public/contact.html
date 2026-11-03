@@ -4,21 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>კონტაქტი — Taste Lab</title>
+  <meta name="tl-title" data-i18n-title="contact">
   <meta name="theme-color" content="#FDF3E8">
   <link rel="icon" href="/assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800;900&family=Noto+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <header class="header is-scrolled">
     <div class="container header__inner">
-      <a href="/" class="brand" aria-label="Taste Lab — მთავარი">
+      <a href="/" class="brand" aria-label="Taste Lab — მთავარი" data-i18n-attr="aria-label:home">
         <img src="/assets/mark.svg" alt="" width="54" height="45">
         <span class="brand__word"><span class="o">Taste</span> Lab</span>
       </a>
-      <a href="/#shop" class="btn btn--ghost" style="margin-left:auto">← მაღაზიაში</a>
+      <div class="lang-switch" data-lang-switch style="margin-left:auto"></div>
+      <a href="/#shop" class="btn btn--ghost" data-i18n="pg.back">← მაღაზიაში</a>
     </div>
   </header>
 
@@ -28,6 +30,7 @@
 
   <footer class="site-footer" data-site-footer></footer>
   <div class="toast" data-toast role="status" aria-live="polite"></div>
+  <script src="/js/i18n.js"></script>
   <script src="/js/illustrations.js"></script>
   <script src="/js/common.js"></script>
   <script src="/js/page.js"></script>

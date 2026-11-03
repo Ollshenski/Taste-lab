@@ -2,9 +2,15 @@
 (function () {
   const { esc, money, toast, visual, cart } = window.TL;
   const { illo } = window.TLIllo;
+  const { t: tr, lang } = window.TLi18n;
   const $ = (s, r = document) => r.querySelector(s);
 
   let site;
+
+  // Cities are shown in the visitor's language but saved in Georgian for the admin panel.
+  const KA_CITIES = ['თბილისი', 'ბათუმი', 'ქუთაისი', 'რუსთავი', 'გორი', 'ზუგდიდი', 'თელავი', 'სხვა'];
+  const cityLabels = tr('cities').split('|');
+  $('[data-cities]').innerHTML = KA_CITIES.map((c, i) => `<option value="${c}">${esc(cityLabels[i] || c)}</option>`).join('');
 
   const params = new URLSearchParams(location.search);
   const returned = params.get('payment');
@@ -19,23 +25,23 @@
     renderSummary();
     cart.onChange(renderSummary);
     $('[data-co-form]').addEventListener('submit', submit);
-  }).catch(() => toast('ჩატვირთვა ვერ მოხერხდა. განაახლეთ გვერდი.'));
+  }).catch(() => toast(tr('load.fail')));
 
   function renderEmpty() {
     $('[data-co-root]').innerHTML = `
       <div class="success">
         ${illo('yogurt-plain', '')}
-        <h1>კალათა ცარიელია</h1>
-        <p>ჯერ აირჩიე შენი საყვარელი სნექები.</p>
-        <a href="/#shop" class="btn btn--primary btn--lg">მაღაზიაში →</a>
+        <h1>${tr('co.empty')}</h1>
+        <p>${tr('co.empty.text')}</p>
+        <a href="/#shop" class="btn btn--primary btn--lg">${tr('to.shop')}</a>
       </div>`;
   }
 
   function renderPayments() {
     const s = site.settings;
     const opts = [
-      { id: 'card', title: 'ბარათით ონლაინ', sub: s.onlinePayments ? 'Visa / Mastercard / Google Pay / Apple Pay' : 'მალე დაემატება', enabled: s.onlinePayments, logos: true },
-      { id: 'cash', title: 'გადახდა მიტანისას', sub: 'ნაღდი ან ბარათით კურიერთან', enabled: s.cashOnDelivery !== false },
+      { id: 'card', title: tr('co.card'), sub: s.onlinePayments ? 'Visa / Mastercard / Google Pay / Apple Pay' : tr('co.card.soon'), enabled: s.onlinePayments, logos: true },
+      { id: 'cash', title: tr('co.cash'), sub: tr('co.cash.sub'), enabled: s.cashOnDelivery !== false },
     ];
     const first = opts.find((o) => o.enabled);
     $('[data-pay-opts]').innerHTML = opts.map((o) => `
@@ -55,7 +61,7 @@
         <strong class="line__total">${money(i.price * i.qty)}</strong>
       </div>`).join('');
     $('[data-co-subtotal]').textContent = money(t.subtotal);
-    $('[data-co-delivery]').textContent = t.delivery ? money(t.delivery) : 'უფასო';
+    $('[data-co-delivery]').textContent = t.delivery ? money(t.delivery) : tr('co.free');
     $('[data-co-total]').textContent = money(t.total);
   }
 
@@ -65,13 +71,13 @@
     const err = $('[data-co-error]');
     err.textContent = '';
     const data = Object.fromEntries(new FormData(form));
-    if (!data.name.trim() || !data.address.trim()) return (err.textContent = 'გთხოვთ შეავსოთ სახელი და მისამართი.');
-    if (!/^[+\d\s()-]{7,20}$/.test(data.phone.trim())) return (err.textContent = 'გთხოვთ მიუთითოთ სწორი ტელეფონის ნომერი.');
-    if (!form.agree.checked) return (err.textContent = 'შეკვეთისთვის საჭიროა მომსახურების პირობებზე თანხმობა.');
+    if (!data.name.trim() || !data.address.trim()) return (err.textContent = tr('co.err.fields'));
+    if (!/^[+\d\s()-]{7,20}$/.test(data.phone.trim())) return (err.textContent = tr('co.err.phone'));
+    if (!form.agree.checked) return (err.textContent = tr('co.err.agree'));
 
     const btn = $('[data-co-submit]');
     btn.disabled = true;
-    btn.textContent = 'მუშავდება…';
+    btn.textContent = tr('co.processing');
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -80,23 +86,24 @@
           customer: { name: data.name, phone: data.phone, email: data.email, city: data.city, address: data.address, note: data.note },
           paymentMethod: data.payment,
           agree: true,
+          lang,
           items: cart.raw().map((l) => (l.type === 'mix' ? { type: 'mix', parts: l.parts, qty: l.qty } : { id: l.id, qty: l.qty })),
         }),
       });
       const out = await res.json();
-      if (!res.ok) throw new Error(out.error || 'შეცდომა');
+      if (!res.ok) throw new Error(out.error || tr('error'));
       if (out.payment?.redirectUrl) {
         // Keep the cart until the payment is confirmed; Flitt sends the customer back here.
-        btn.textContent = 'გადამისამართება გადახდაზე…';
+        btn.textContent = tr('co.redirect');
         location.href = out.payment.redirectUrl;
         return;
       }
       cart.clear();
       success(out.order);
     } catch (ex) {
-      err.textContent = ex.message || 'შეკვეთა ვერ გაიგზავნა. სცადეთ თავიდან.';
+      err.textContent = ex.message || tr('co.err.send');
       btn.disabled = false;
-      btn.textContent = 'შეკვეთის დადასტურება';
+      btn.textContent = tr('co.submit');
     }
   }
 
@@ -109,8 +116,8 @@
       return true;
     }
     toast(status === 'failed'
-      ? 'გადახდა არ შედგა. შეკვეთა გაუქმდა — შეგიძლიათ სცადოთ თავიდან.'
-      : 'გადახდის სტატუსი ვერ დადასტურდა. თუ თანხა ჩამოგეჭრათ, დაგვიკავშირდით.');
+      ? tr('co.failed')
+      : tr('co.unknown'));
     return false;
   }
 
@@ -120,10 +127,10 @@
       <div class="success">
         ${illo('mix', '')}
         <p class="eyebrow mono">EXPERIMENT SUCCESSFUL ✓</p>
-        <h1>მადლობა! შეკვეთა მიღებულია</h1>
+        <h1>${tr('co.thanks')}</h1>
         <div class="order-no">${esc(order.number)}</div>
-        <p>${payment === 'paid' ? '✅ გადახდა წარმატებით შესრულდა.' : payment === 'pending' ? '⏳ გადახდა მუშავდება — დადასტურებისთანავე დაგიკავშირდებით.' : `სულ გადასახდელი: <b>${money(order.total)}</b>.`}<br>ჩვენი გუნდი მალე დაგიკავშირდება ტელეფონით მიწოდების დასაზუსტებლად.</p>
-        <a href="/" class="btn btn--primary btn--lg">მთავარზე დაბრუნება</a>
+        <p>${payment === 'paid' ? tr('co.paid') : payment === 'pending' ? tr('co.pending') : tr('co.topay', { amount: money(order.total) })}<br>${tr('co.call')}</p>
+        <a href="/" class="btn btn--primary btn--lg">${tr('co.home')}</a>
       </div>`;
     confetti();
   }

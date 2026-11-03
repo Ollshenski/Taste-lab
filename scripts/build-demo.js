@@ -21,7 +21,10 @@ const dataUri = (rel) => `data:${MIME[path.extname(rel)]};base64,${fs.readFileSy
 const db = seed();
 delete db.auth;
 for (const p of db.products) if (p.image.startsWith('/products/')) p.image = dataUri(p.image.slice(1));
-const demoApi = fs.readFileSync(path.join(ROOT, 'demo', 'demo-api.js'), 'utf8').replace('__SEED__', JSON.stringify(db));
+const i18nSrc = fs.readFileSync(path.join(ROOT, 'lib', 'i18n.js'), 'utf8').replace("'use strict';", '');
+const demoApi = fs.readFileSync(path.join(ROOT, 'demo', 'demo-api.js'), 'utf8')
+  .replace('__SEED__', () => JSON.stringify(db))
+  .replace('__I18N__', () => i18nSrc);
 
 function build(rel, { home, embedded }) {
   let html = read(rel);
@@ -30,6 +33,7 @@ function build(rel, { home, embedded }) {
     .replace(/<script src="\/js\/illustrations\.js"><\/script>/, () => `<script>\n${demoApi}\n</script>\n<script src="/js/illustrations.js"></script>`)
     .replace(/<script src="\/([^"]+\.js)"><\/script>/g, (_, f) => `<script>\n${read(f).replace(/<\/script/g, '<\\/script')}\n</script>`)
     .replace(/(["'])\/(assets\/[\w./-]+\.(?:svg|png|jpg|webp))\1/g, (_, q, f) => `${q}${dataUri(f)}${q}`)
+    .replace(/href="\/\?lang=/g, `href="${home}?lang=`)
     .replace(/href="\/(terms|privacy|contact)"/g, (_, page) => `href="${home.replace('index.html', '')}${page}.html"`)
     .replace(/href="\/checkout"/g, 'href="checkout.html"')
     .replace(/href="\/admin"/g, `href="${home.replace('index.html', '')}admin/index.html"`)

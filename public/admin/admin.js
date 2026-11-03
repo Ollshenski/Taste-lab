@@ -379,6 +379,19 @@
           <label class="field"><span>ნახშირწყლები</span><input name="carbs" value="${esc(n.carbs)}"></label>
           <label class="field"><span>ცხიმი</span><input name="fat" value="${esc(n.fat)}"></label>
         </div></fieldset>
+        ${['en', 'ru'].map((l) => {
+          const tr = (p.i18n || {})[l] || {};
+          const f = (k, label, long) => `<label class="field ${long ? 'full' : ''}"><span>${label}</span>${long
+            ? `<textarea name="tr_${l}_${k}" rows="3" placeholder="${esc(p[k] || '')}">${esc(tr[k] || '')}</textarea>`
+            : `<input name="tr_${l}_${k}" value="${esc(tr[k] || '')}" placeholder="${esc(p[k] || '')}">`}</label>`;
+          return `<fieldset><legend>${l === 'en' ? 'English' : 'Русский'} — თარგმანი</legend>
+            <p class="muted" style="font-size:12px;margin:0 0 10px">ცარიელი ველის ნაცვლად საიტზე ქართული ტექსტი გამოჩნდება.</p>
+            <div class="form-grid">
+              ${f('name', 'დასახელება', false)}${f('tagline', 'მოკლე აღწერა', false)}
+              ${f('description', 'სრული აღწერა', true)}
+              ${f('ingredients', 'შემადგენლობა', false)}${f('weight', 'წონა', false)}${f('badge', 'ბეჯი', false)}
+            </div></fieldset>`;
+        }).join('')}
         <fieldset><legend>ხილვადობა</legend>
           <label class="check"><input type="checkbox" name="active" ${p.active ? 'checked' : ''}> ჩანს საიტზე</label>
         </fieldset>
@@ -434,6 +447,9 @@
         illustration: p.illustration,
         image: p.image || '',
         nutrition: { kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat },
+        i18n: Object.fromEntries(['en', 'ru'].map((l) => [l, Object.fromEntries(
+          ['name', 'tagline', 'description', 'ingredients', 'weight', 'badge'].map((k) => [k, f[`tr_${l}_${k}`] || '']),
+        )])),
       };
       try {
         await api(id ? '/admin/products/' + id : '/admin/products', { method: id ? 'PUT' : 'POST', body });
@@ -473,41 +489,65 @@
   };
   const LONG = new Set(['subtitle', 'text', 'a', 'announcement', 'body']);
 
+  const LANG_NAMES = { ka: 'ქართული', en: 'English', ru: 'Русский' };
+  let contentLang = 'ka';
+
+  // Translation draft: the Georgian structure, filled with what is already translated.
+  function trDraft(base, tr) {
+    if (typeof base === 'string') return typeof tr === 'string' ? tr : '';
+    if (typeof base === 'number') return undefined;
+    if (Array.isArray(base)) return base.map((b, i) => trDraft(b, Array.isArray(tr) ? tr[i] : undefined));
+    if (base && typeof base === 'object') return Object.fromEntries(Object.keys(base).map((k) => [k, trDraft(base[k], tr ? tr[k] : undefined)]));
+    return undefined;
+  }
+
   function content() {
-    const draft = JSON.parse(JSON.stringify(db.content));
+    const isKa = contentLang === 'ka';
+    const base = db.content;
+    const draft = isKa ? JSON.parse(JSON.stringify(base)) : trDraft(base, (db.contentI18n || {})[contentLang]);
     root.innerHTML = `
-      <div class="page-head"><div><h1>საიტის კონტენტი</h1><p>შეცვალეთ ტექსტები და დააჭირეთ „შენახვას“ — ცვლილება მაშინვე გამოჩნდება საიტზე.</p></div>
-        <a href="/" target="_blank" rel="noopener" class="btn btn--sm">საიტის ნახვა ↗</a></div>
+      <div class="page-head"><div><h1>საიტის კონტენტი</h1><p>${isKa
+        ? 'შეცვალეთ ტექსტები და დააჭირეთ „შენახვას“ — ცვლილება მაშინვე გამოჩნდება საიტზე.'
+        : `თარგმანი: <b>${LANG_NAMES[contentLang]}</b>. ცარიელი ველის ნაცვლად საიტზე ქართული ტექსტი გამოჩნდება. ელემენტების დამატება/წაშლა ხდება ქართულ ტაბში.`}</p></div>
+        <a href="/?lang=${contentLang}" target="_blank" rel="noopener" class="btn btn--sm">საიტის ნახვა ↗</a></div>
+      <div class="tabs" role="tablist">${Object.entries(LANG_NAMES).map(([l, n]) => `<button type="button" role="tab" class="tab ${l === contentLang ? 'is-on' : ''}" aria-selected="${l === contentLang}" data-content-lang="${l}">${n}</button>`).join('')}</div>
       <form data-content-form>
         <div data-content-fields></div>
         <div class="save-bar"><button class="btn btn--primary" type="submit">ცვლილებების შენახვა</button></div>
       </form>`;
 
+    $$('[data-content-lang]').forEach((b) => b.addEventListener('click', () => { contentLang = b.dataset.contentLang; content(); }));
+
+    const kaAt = (path) => path.reduce((o, k) => (o == null ? o : o[k]), base);
     const draw = () => {
       $('[data-content-fields]').innerHTML = Object.keys(draft).map((k) => `<div class="card">${fieldFor(draft[k], [k], k)}</div>`).join('');
     };
 
     function fieldFor(value, path, key) {
+      if (value === undefined) return '';
       const label = LABELS[key] || key;
       const p = esc(JSON.stringify(path));
       if (typeof value === 'string' || typeof value === 'number') {
-        const long = LONG.has(key) || String(value).length > 80;
+        const ka = isKa ? '' : String(kaAt(path) ?? '');
+        const long = LONG.has(key) || String(value).length > 80 || ka.length > 80;
+        const ph = ka ? `placeholder="${esc(ka)}"` : '';
         return `<label class="field" style="margin-bottom:12px"><span>${esc(label)}</span>${long
-          ? `<textarea data-path="${p}" rows="${key === 'body' ? 24 : 3}">${esc(value)}</textarea>`
-          : `<input data-path="${p}" ${typeof value === 'number' ? 'type="number"' : ''} value="${esc(value)}">`}</label>`;
+          ? `<textarea data-path="${p}" ${ph} rows="${key === 'body' ? 24 : 3}">${esc(value)}</textarea>`
+          : `<input data-path="${p}" ${typeof value === 'number' ? 'type="number"' : ''} ${ph} value="${esc(value)}">`}
+          ${ka && !long ? `<small>ქართ.: ${esc(ka)}</small>` : ''}</label>`;
       }
       if (Array.isArray(value)) {
         return `<h2>${esc(label)}</h2>
           ${value.map((item, i) => `
             <div class="arr-item">
               <div class="arr-item__tools"><span class="mono">#${i + 1}</span>
-                <button class="icon" type="button" data-arr="${p}" data-act="up" data-i="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
+                ${isKa ? `<button class="icon" type="button" data-arr="${p}" data-act="up" data-i="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
                 <button class="icon" type="button" data-arr="${p}" data-act="down" data-i="${i}" ${i === value.length - 1 ? 'disabled' : ''}>↓</button>
-                <button class="icon" type="button" data-arr="${p}" data-act="del" data-i="${i}" title="წაშლა">✕</button>
+                <button class="icon" type="button" data-arr="${p}" data-act="del" data-i="${i}" title="წაშლა">✕</button>` : ''}
               </div>
               <div class="form-grid">${Object.keys(item).map((k) => `<div class="${LONG.has(k) ? 'full' : ''}">${fieldFor(item[k], [...path, i, k], k)}</div>`).join('')}</div>
             </div>`).join('')}
-          <button class="btn btn--sm" type="button" data-arr="${p}" data-act="add">+ დამატება</button>`;
+          ${isKa ? `<button class="btn btn--sm" type="button" data-arr="${p}" data-act="add">+ დამატება</button>` : ''}`;
       }
       return `<h2>${esc(label)}</h2>${Object.keys(value).map((k) => fieldFor(value[k], [...path, k], k)).join('')}`;
     }
@@ -523,7 +563,7 @@
     });
     form.addEventListener('click', (e) => {
       const b = e.target.closest('[data-arr]');
-      if (!b) return;
+      if (!b || !isKa) return;
       const arr = getAt(JSON.parse(b.dataset.arr));
       const i = Number(b.dataset.i);
       if (b.dataset.act === 'add') {
@@ -541,7 +581,9 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        db.content = await api('/admin/content', { method: 'PUT', body: draft });
+        const saved = await api('/admin/content' + (isKa ? '' : '?lang=' + contentLang), { method: 'PUT', body: draft });
+        if (isKa) db.content = saved;
+        else (db.contentI18n = db.contentI18n || {})[contentLang] = saved;
         toast('კონტენტი შენახულია ✓');
       } catch (ex) {
         toast(ex.message);
@@ -574,10 +616,14 @@
         <div class="card"><h2>კომპანია (საჭიროა Flitt-ისთვის)</h2><div class="form-grid">
           ${input('companyName', 'შპს დასახელება, მაგ. „შპს ტეისთ ლაბი“')}${input('companyId', 'საიდენთიფიკაციო კოდი')}
           <div class="full">${input('legalAddress', 'იურიდიული მისამართი')}</div>
+          ${input('companyName_en', 'კომპანია (English)')}${input('companyName_ru', 'კომპანია (Русский)')}
+          ${input('legalAddress_en', 'იურიდიული მისამართი (English)')}${input('legalAddress_ru', 'იურიდიული მისამართი (Русский)')}
         </div><p class="muted" style="font-size:13px;margin:10px 0 0">ჩანს გვერდებზე „კონტაქტი“, „მომსახურების პირობები“, „კონფიდენციალურობის პოლიტიკა“ და საიტის ქვედა ნაწილში.</p></div>
         <div class="card"><h2>კონტაქტი</h2><div class="form-grid">
           ${input('phone', 'ტელეფონი')}${input('email', 'ელ-ფოსტა', 'email')}
           ${input('address', 'მისამართი')}${input('hours', 'სამუშაო საათები')}
+          ${input('address_en', 'მისამართი (English)')}${input('hours_en', 'სამუშაო საათები (English)')}
+          ${input('address_ru', 'მისამართი (Русский)')}${input('hours_ru', 'სამუშაო საათები (Русский)')}
         </div></div>
         <div class="card"><h2>სოციალური ქსელები</h2><div class="form-grid">
           ${input('instagram', 'Instagram ბმული', 'url')}${input('facebook', 'Facebook ბმული', 'url')}${input('tiktok', 'TikTok ბმული', 'url')}

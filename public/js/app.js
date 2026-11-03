@@ -5,7 +5,8 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const CATEGORY = { yogurt: 'მაწონი / იოგურტი', fruit: 'ხილი', sweets: 'ტკბილეული', mix: 'მიქსი' };
+  const { t } = window.TLi18n;
+  const CATEGORY = { yogurt: t('cat.yogurt'), fruit: t('cat.fruit'), sweets: t('cat.sweets'), mix: t('cat.mix') };
   const FILTER_ICON = { yogurt: '🥛', fruit: '🍓', sweets: '🍬', mix: '🧪' };
 
   let site;
@@ -13,7 +14,7 @@
 
   init().catch((err) => {
     console.error(err);
-    toast('საიტის ჩატვირთვა ვერ მოხერხდა. განაახლეთ გვერდი.');
+    toast(t('load.fail'));
   });
 
   async function init() {
@@ -92,7 +93,7 @@
   function renderFilters() {
     const cats = Object.keys(CATEGORY).filter((c) => site.products.some((p) => p.category === c));
     $('[data-filters]').hidden = cats.length < 2;
-    $('[data-filters]').innerHTML = [['all', 'ყველა'], ...cats.map((c) => [c, `${FILTER_ICON[c]} ${CATEGORY[c]}`])]
+    $('[data-filters]').innerHTML = [['all', t('filter.all')], ...cats.map((c) => [c, `${FILTER_ICON[c]} ${CATEGORY[c]}`])]
       .map(([k, l]) => `<button class="chip ${k === filter ? 'is-active' : ''}" role="tab" aria-selected="${k === filter}" data-filter="${k}">${esc(l)}</button>`).join('');
   }
 
@@ -100,7 +101,7 @@
     const list = site.products.filter((p) => filter === 'all' || p.category === filter);
     const wrap = $('[data-products]');
     if (!list.length) {
-      wrap.innerHTML = '<p class="empty">ამ კატეგორიაში პროდუქტი ჯერ არ არის — ექსპერიმენტი მიმდინარეობს 🧪</p>';
+      wrap.innerHTML = `<p class="empty">${t('shop.empty')}</p>`;
       return;
     }
     wrap.innerHTML = list.map((p) => {
@@ -108,7 +109,7 @@
       const out = p.stock <= 0;
       return `
       <article class="card reveal" style="--c:${esc(p.color)}" data-id="${esc(p.id)}">
-        <button class="card__visual" type="button" data-open="${esc(p.id)}" aria-label="${esc(p.name)} — დეტალურად">
+        <button class="card__visual" type="button" data-open="${esc(p.id)}" aria-label="${esc(p.name)} — ${t('details')}">
           <span class="card__blob"></span>
           ${visual(p, 'card__img')}
           <span class="card__spec mono">SPECIMEN №${String(idx).padStart(3, '0')}</span>
@@ -123,8 +124,8 @@
               <strong>${money(p.price)}</strong>
               ${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ''}
             </div>
-            <button class="add-btn" type="button" data-add="${esc(p.id)}" ${out ? 'disabled' : ''} aria-label="კალათაში დამატება — ${esc(p.name)}">
-              ${out ? 'ამოიწურა' : '<span>+</span>'}
+            <button class="add-btn" type="button" data-add="${esc(p.id)}" ${out ? 'disabled' : ''} aria-label="${t('add.to.cart')} — ${esc(p.name)}">
+              ${out ? t('sold.out') : '<span>+</span>'}
             </button>
           </div>
         </div>
@@ -157,11 +158,11 @@
   function addToCart(id, qty, sourceEl) {
     const p = site.products.find((x) => x.id === id);
     if (!cart.add(id, qty)) {
-      toast('მარაგში მეტი აღარ არის 😔');
+      toast(t('no.more.stock'));
       return;
     }
     flyToCart(sourceEl, p);
-    toast(`„${p.name}“ დაემატა კალათაში`);
+    toast(t('added.to.cart', { name: p.name }));
   }
 
   function flyToCart(sourceEl, p) {
@@ -224,7 +225,7 @@
     const n = p.nutrition || {};
     const out = p.stock <= 0;
     $('[data-modal-card]').innerHTML = `
-      <button class="icon-btn modal__close" type="button" data-close-modal aria-label="დახურვა">✕</button>
+      <button class="icon-btn modal__close" type="button" data-close-modal aria-label="${t('close')}">✕</button>
       <div class="modal__visual" style="--c:${esc(p.color)}">
         <span class="card__blob"></span>
         ${visual(p, 'modal__img')}
@@ -235,22 +236,22 @@
         <h2 id="modal-title">${esc(p.name)}</h2>
         <p class="modal__tag">${esc(p.tagline)}</p>
         <p>${esc(p.description)}</p>
-        ${p.ingredients ? `<p class="modal__ing"><b>შემადგენლობა:</b> ${esc(p.ingredients)}</p>` : ''}
+        ${p.ingredients ? `<p class="modal__ing"><b>${t('ingredients')}:</b> ${esc(p.ingredients)}</p>` : ''}
         <div class="nutri mono">
-          ${[['kcal', 'კკალ'], ['protein', 'ცილა'], ['carbs', 'ნახშირწყ.'], ['fat', 'ცხიმი']]
+          ${[['kcal', t('kcal')], ['protein', t('protein')], ['carbs', t('carbs')], ['fat', t('fat')]]
             .filter(([k]) => n[k]).map(([k, l]) => `<div><strong>${esc(n[k])}</strong><span>${l}</span></div>`).join('')}
         </div>
-        <p class="nutri__note mono">${n.kcal ? 'კვებითი ღირებულება 100 გ-ზე' : ''}</p>
+        <p class="nutri__note mono">${n.kcal ? t('per.100g') : ''}</p>
         <div class="modal__buy">
           <div class="price price--lg"><strong>${money(p.price)}</strong>${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ''}</div>
           <div class="qty" data-qty>
-            <button type="button" data-q="-1" aria-label="შემცირება">−</button>
+            <button type="button" data-q="-1" aria-label="${t('decrease')}">−</button>
             <span data-q-val>1</span>
-            <button type="button" data-q="1" aria-label="გაზრდა">+</button>
+            <button type="button" data-q="1" aria-label="${t('increase')}">+</button>
           </div>
-          <button class="btn btn--primary btn--lg" type="button" data-modal-add ${out ? 'disabled' : ''}>${out ? 'ამოიწურა' : 'კალათაში'}</button>
+          <button class="btn btn--primary btn--lg" type="button" data-modal-add ${out ? 'disabled' : ''}>${out ? t('sold.out') : t('to.cart')}</button>
         </div>
-        <p class="stock mono">${out ? '● მარაგში არ არის' : p.stock < 15 ? `● დარჩა მხოლოდ ${p.stock} ცალი` : '● მარაგშია'}</p>
+        <p class="stock mono">${out ? t('stock.out') : p.stock < 15 ? t('stock.low', { n: p.stock }) : t('stock.ok')}</p>
       </div>`;
     const modal = $('[data-modal]');
     modal.hidden = false;
@@ -335,7 +336,7 @@
       <button type="button" class="element" style="--c:${esc(p.color)}" data-el="${esc(p.id)}" aria-pressed="false">
         <span class="element__n mono">${i + 1}</span>
         <span class="element__sym">${esc(symbolFor(p))}</span>
-        <span class="element__name">${esc(p.name.replace(/^.*— /, '').replace('სუბლიმირებული ', ''))}</span>
+        <span class="element__name">${esc(p.name.replace(/^.*— /, '').replace(/^(სუბლიმირებული|freeze-dried|сублимированн\S*)\s+/i, ''))}</span>
       </button>`).join('');
     $('[data-mix-price]').textContent = money(site.settings.mixPrice);
 
@@ -345,7 +346,7 @@
       const id = b.dataset.el;
       const i = mix.indexOf(id);
       if (i >= 0) mix.splice(i, 1);
-      else if (mix.length >= 4) return toast('მაქსიმუმ 4 ელემენტი ერთ კოლბაში 🧪');
+      else if (mix.length >= 4) return toast(t('mix.max'));
       else mix.push(id);
       updateFlask(id, i < 0);
     });
@@ -354,7 +355,7 @@
       if (mix.length < 2) return;
       cart.addMix(mix);
       flyToCart(e.currentTarget, { illustration: 'mix', color: '#F58220', name: 'Lab Mix' });
-      toast('შენი Lab Mix დაემატა კალათაში 🧪');
+      toast(t('mix.added'));
       mix.splice(0);
       updateFlask();
     });
@@ -381,7 +382,7 @@
     const note = $('[data-mixer-note]');
     const btn = $('[data-add-mix]');
     btn.disabled = parts.length < 2;
-    note.textContent = parts.length < 2 ? `აირჩიე კიდევ ${2 - parts.length} ელემენტი` : parts.length < 4 ? `შეგიძლია დაამატო კიდევ ${4 - parts.length}` : 'კოლბა სავსეა! ✨';
+    note.textContent = parts.length < 2 ? t('mix.more', { n: 2 - parts.length }) : parts.length < 4 ? t('mix.canadd', { n: 4 - parts.length }) : t('mix.full');
     $('[data-formula]').textContent = parts.length
       ? 'TL-' + parts.map(symbolFor).join('·')
       : '— — —';
@@ -428,7 +429,7 @@
     const update = () => {
       const k = range.value / 100;
       fruit.style.setProperty('--k', k);
-      $('[data-cmp-weight]').textContent = Math.round(300 - 280 * k) + ' გ';
+      $('[data-cmp-weight]').textContent = Math.round(300 - 280 * k) + ' ' + t('g');
       $('[data-cmp-water]').textContent = Math.round(90 - 87 * k) + '%';
       $('[data-cmp-vit]').textContent = Math.round(100 - 3 * k) + '%';
       crystals.forEach((c, i) => (c.style.opacity = k > 0.1 && k < 0.9 ? String(Math.sin(k * Math.PI) * (0.4 + (i % 3) * 0.2)) : '0'));
@@ -443,7 +444,7 @@
   function renderReviews() {
     const items = site.content.testimonials.map((t) => `
       <figure class="review">
-        <div class="review__stars" aria-label="${Number(t.rating) || 5} ვარსკვლავი">${'★'.repeat(Math.max(1, Math.min(5, Number(t.rating) || 5)))}</div>
+        <div class="review__stars" aria-label="${window.TLi18n.t('stars', { n: Number(t.rating) || 5 })}">${'★'.repeat(Math.max(1, Math.min(5, Number(t.rating) || 5)))}</div>
         <blockquote>„${esc(t.text)}“</blockquote>
         <figcaption class="mono">— ${esc(t.name)}</figcaption>
       </figure>`).join('');
@@ -551,7 +552,7 @@
     }
     const word = document.createElement('span');
     word.className = 'crunch-word';
-    word.textContent = ['ხრაშ!', 'CRUNCH!', 'ხრუშ!', 'POP!'][Math.floor(Math.random() * 4)];
+    word.textContent = t('crunch').split('|')[Math.floor(Math.random() * 4)];
     word.style.left = r.left + r.width / 2 + 'px';
     word.style.top = r.top + 'px';
     document.body.appendChild(word);
@@ -656,8 +657,8 @@
     const left = Math.max(0, t.free - t.subtotal);
     $('[data-ship-progress]').hidden = !t.free;
     $('[data-ship-text]').innerHTML = !t.count
-      ? `დაამატე ${money(t.free)}-ის პროდუქტი და მიწოდება <b>უფასოა</b>`
-      : left > 0 ? `კიდევ <b>${money(left)}</b> და მიწოდება უფასოა 🚚` : '🎉 შენ მიიღე <b>უფასო მიწოდება!</b>';
+      ? window.TLi18n.t('ship.start', { amount: money(t.free) })
+      : left > 0 ? window.TLi18n.t('ship.left', { amount: money(left) }) : window.TLi18n.t('ship.free');
     $('[data-ship-bar]').style.width = Math.min(100, (t.subtotal / (t.free || 1)) * 100) + '%';
 
     $('[data-cart-items]').innerHTML = t.items.length
@@ -668,14 +669,14 @@
             <strong>${esc(i.name)}</strong>
             <span class="mono">${money(i.price)}${i.weight ? ' · ' + esc(i.weight) : ''}</span>
             <div class="qty qty--sm">
-              <button type="button" data-line="${esc(i.key)}" data-delta="-1" aria-label="შემცირება">−</button>
+              <button type="button" data-line="${esc(i.key)}" data-delta="-1" aria-label="${window.TLi18n.t('decrease')}">−</button>
               <span>${i.qty}</span>
-              <button type="button" data-line="${esc(i.key)}" data-delta="1" aria-label="გაზრდა">+</button>
+              <button type="button" data-line="${esc(i.key)}" data-delta="1" aria-label="${window.TLi18n.t('increase')}">+</button>
             </div>
           </div>
           <strong class="line__total">${money(i.price * i.qty)}</strong>
         </div>`).join('')
-      : `<div class="cart-empty">${illo('yogurt-plain', '')}<p>კოლბა ცარიელია.<br>დაიწყე ექსპერიმენტი!</p><a href="#shop" class="btn btn--ghost" data-close-cart-link>მაღაზიაში →</a></div>`;
+      : `<div class="cart-empty">${illo('yogurt-plain', '')}<p>${window.TLi18n.t('cart.empty')}</p><a href="#shop" class="btn btn--ghost" data-close-cart-link>${window.TLi18n.t('to.shop')}</a></div>`;
     const link = $('[data-close-cart-link]');
     if (link) link.addEventListener('click', closeCart);
   }
@@ -691,9 +692,9 @@
         const res = await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
         if (!res.ok) throw new Error();
         form.reset();
-        toast('მადლობა! შენ ახლა ლაბორატორიის წევრი ხარ 🧪');
+        toast(t('nl.ok'));
       } catch {
-        toast('ვერ მოხერხდა. შეამოწმე ელ-ფოსტა და სცადე თავიდან.');
+        toast(t('nl.fail'));
       }
     });
   }

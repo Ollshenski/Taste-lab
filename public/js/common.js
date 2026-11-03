@@ -19,7 +19,8 @@
   }
 
   async function loadSite() {
-    const res = await fetch('/api/site');
+    const lang = window.TLi18n?.lang || 'ka';
+    const res = await fetch('/api/site?lang=' + lang);
     if (!res.ok) throw new Error('site load failed');
     site = await res.json();
     return site;

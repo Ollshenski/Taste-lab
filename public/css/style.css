@@ -20,9 +20,9 @@
   --radius-sm: 14px;
   --shadow: 5px 5px 0 var(--ink);
   --shadow-sm: 3px 3px 0 var(--ink);
-  --font: 'Outfit', 'Noto Sans Georgian', system-ui, sans-serif;
-  --font-ka: 'Noto Sans Georgian', 'Outfit', system-ui, sans-serif;
-  --mono: 'Space Mono', 'Noto Sans Georgian', ui-monospace, monospace;
+  --font: 'Outfit', 'Noto Sans Georgian', 'Noto Sans', system-ui, sans-serif;
+  --font-ka: 'Noto Sans Georgian', 'Outfit', 'Noto Sans', system-ui, sans-serif;
+  --mono: 'Space Mono', 'Noto Sans Georgian', 'Noto Sans', ui-monospace, monospace;
   --ease: cubic-bezier(.2, .8, .2, 1);
   --bounce: cubic-bezier(.34, 1.56, .64, 1);
   --header-h: 76px;
@@ -575,6 +575,23 @@ img.modal__img { width: 64%; max-height: 440px; object-fit: contain; filter: dro
 .success svg { width: 180px; margin: 0 auto 20px; }
 .success .order-no { display: inline-block; font-family: var(--mono); font-size: 24px; background: var(--orange); border: 2.5px solid var(--ink); border-radius: 14px; padding: 8px 18px; margin: 10px 0 20px; box-shadow: var(--shadow-sm); }
 .confetti { position: fixed; top: -20px; width: 10px; height: 16px; z-index: 500; pointer-events: none; border: 1.5px solid var(--ink); border-radius: 3px; }
+
+/* --------------------------------------------------- language switch */
+.lang-switch { display: inline-flex; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); overflow: hidden; }
+.lang-switch button { border: 0; background: none; padding: 7px 10px; font-family: var(--mono); font-size: 12px; font-weight: 700; line-height: 1; transition: background .2s, color .2s; }
+.lang-switch button:hover { background: var(--orange-soft); }
+.lang-switch button.is-on { background: var(--ink); color: var(--cream); }
+.header__actions .lang-switch { margin-right: 4px; }
+.nav__lang { display: none; }
+.brand__word { white-space: nowrap; }
+@media (max-width: 900px) {
+  .header__actions .lang-switch { display: none; }
+  .nav__lang { display: inline-flex; align-self: flex-start; margin: 10px 16px 6px; }
+  .nav__lang button { padding: 10px 14px; font-size: 14px; }
+}
+@media (max-width: 560px) {
+  .header__inner > .btn--ghost { display: none; }
+}
 
 /* ------------------------------------------------- legal pages & footer */
 .page h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 900; }

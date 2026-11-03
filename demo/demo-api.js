@@ -4,7 +4,8 @@
    Each visitor gets their own copy of the data. Injected by scripts/build-demo.js. */
 (function () {
   const SEED = __SEED__;
-  const KEY = 'tl_demo_db_v2';
+  const I18N = (function () { const module = { exports: {} }; __I18N__; return module.exports; })();
+  const KEY = 'tl_demo_db_v3';
   const SESSION = 'tl_demo_admin';
   const PASSWORD_DEFAULT = 'tastelab2026';
   const STATUSES = ['new', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -50,13 +51,20 @@
       illustration: String(input.illustration || 'strawberry'), image: typeof input.image === 'string' ? input.image : existing.image || '',
       badge: String(input.badge || ''), featured: Boolean(input.featured), active: input.active === undefined ? true : Boolean(input.active),
       nutrition: { kcal: String(n.kcal || ''), protein: String(n.protein || ''), carbs: String(n.carbs || ''), fat: String(n.fat || '') },
+      i18n: input.i18n && typeof input.i18n === 'object' ? input.i18n : existing.i18n || { en: {}, ru: {} },
     };
   }
 
-  async function handle(method, path, body) {
+  async function handle(method, path, body, query) {
     const db = load();
     if (method === 'GET' && path === '/api/site') {
-      return json(200, { content: db.content, settings: db.settings, products: db.products.filter((p) => p.active) });
+      const lang = I18N.pickLang(query.get('lang'));
+      return json(200, {
+        lang,
+        content: I18N.localizeContent(db, lang),
+        settings: I18N.localizeSettings(db.settings, lang),
+        products: db.products.filter((p) => p.active).map((p) => I18N.localizeProduct(p, lang)),
+      });
     }
     if (method === 'POST' && path === '/api/subscribe') {
       const email = String(body?.email || '').trim().toLowerCase();
@@ -131,7 +139,13 @@
       return done(200, o);
     }
     if (res === 'subscribers') { db.subscribers = db.subscribers.filter((s) => s.email !== decodeURIComponent(id)); return done(200, { ok: true }); }
-    if (res === 'content') { db.content = { ...db.content, ...body }; return done(200, db.content); }
+    if (res === 'content') {
+      const lang = I18N.pickLang(query.get('lang'));
+      if (lang === 'ka') { db.content = { ...db.content, ...body }; return done(200, db.content); }
+      db.contentI18n = db.contentI18n || {};
+      db.contentI18n[lang] = body;
+      return done(200, body);
+    }
     if (res === 'settings') {
       const s = db.settings;
       Object.assign(s, body, {
@@ -156,7 +170,7 @@
     if (!url.startsWith('/api')) return realFetch(input, opts);
     let body = opts.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-    return handle((opts.method || 'GET').toUpperCase(), url.split('?')[0], body || {});
+    return handle((opts.method || 'GET').toUpperCase(), url.split('?')[0], body || {}, new URLSearchParams(url.split('?')[1] || ''));
   };
 
   window.TL_DEMO_RESET = () => { try { localStorage.removeItem(KEY); } catch {} memory = null; location.reload(); };

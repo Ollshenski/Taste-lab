@@ -235,6 +235,7 @@
           <dt>მისამართი</dt><dd>${esc(o.customer.city)}, ${esc(o.customer.address)}</dd>
           ${o.paymentRef ? `<dt>Flitt</dt><dd class="mono">${esc(o.paymentRef)}${o.paymentId ? ' · ID ' + esc(o.paymentId) : ''}${o.flittStatus ? ' · ' + esc(o.flittStatus) : ''}</dd>` : ''}
           ${o.customer.note ? `<dt>კომენტარი</dt><dd>${esc(o.customer.note)}</dd>` : ''}
+          ${o.emailResult ? `<dt>ელფოსტა</dt><dd>მაღაზიას: ${esc(o.emailResult.admin || '—')}${o.customer.email ? ` · მომხმარებელს: ${esc(o.emailResult.customer || '—')}` : ''}</dd>` : ''}
         </dl>
       </div>
       <div class="card">
@@ -619,6 +620,12 @@
           ${input('companyName_en', 'კომპანია (English)')}${input('companyName_ru', 'კომპანია (Русский)')}
           ${input('legalAddress_en', 'იურიდიული მისამართი (English)')}${input('legalAddress_ru', 'იურიდიული მისამართი (Русский)')}
         </div><p class="muted" style="font-size:13px;margin:10px 0 0">ჩანს გვერდებზე „კონტაქტი“, „მომსახურების პირობები“, „კონფიდენციალურობის პოლიტიკა“ და საიტის ქვედა ნაწილში.</p></div>
+        <div class="card"><h2>ელფოსტის შეტყობინებები</h2>
+          <p style="margin:0 0 12px">${db.mailConfigured
+            ? `✅ ჩართულია. ახალი შეკვეთის შეტყობინება მოვა მისამართზე <b>${esc(db.mailNotifyTo)}</b>; მომხმარებელი, თუ ელ-ფოსტა მიუთითა, მიიღებს დადასტურებას თავის ენაზე.`
+            : '⚠️ არ არის ჩართული: სერვერის .env-ში საჭიროა SMTP_HOST, SMTP_USER და SMTP_PASS.'}</p>
+          <button class="btn btn--sm" type="button" data-test-email ${db.mailConfigured ? '' : 'disabled'}>სატესტო წერილის გაგზავნა</button>
+        </div>
         <div class="card"><h2>კონტაქტი</h2><div class="form-grid">
           ${input('phone', 'ტელეფონი')}${input('email', 'ელ-ფოსტა', 'email')}
           ${input('address', 'მისამართი')}${input('hours', 'სამუშაო საათები')}
@@ -630,6 +637,17 @@
         </div></div>
         <div class="save-bar"><button class="btn btn--primary" type="submit">შენახვა</button></div>
       </form>`;
+    $('[data-test-email]').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        const r = await api('/admin/test-email', { method: 'POST' });
+        toast('სატესტო წერილი გაიგზავნა: ' + r.to);
+      } catch (ex) {
+        toast(ex.message);
+      }
+      btn.disabled = false;
+    });
     $('[data-settings-form]').addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = e.currentTarget;

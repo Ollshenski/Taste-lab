@@ -10,6 +10,7 @@ const store = require('./lib/store');
 const auth = require('./lib/auth');
 const payments = require('./lib/payments');
 const i18n = require('./lib/i18n');
+const mailer = require('./lib/mailer');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -126,7 +127,8 @@ app.post('/api/orders', (req, res) => {
   const customer = {
     name: str(body.customer?.name, 100),
     phone: str(body.customer?.phone, 30),
-    email: str(body.customer?.email, 120),
+    // Only a plain single address; anything else is dropped rather than mailed.
+    email: /^[^\s@,;<>"']+@[^\s@,;<>"']+\.[^\s@,;<>"']+$/.test(str(body.customer?.email, 120)) ? str(body.customer?.email, 120) : '',
     city: str(body.customer?.city, 60),
     address: str(body.customer?.address, 300),
     note: str(body.customer?.note, 500),
@@ -198,7 +200,11 @@ app.post('/api/orders', (req, res) => {
 
   payments
     .createPayment(order)
-    .then((payment) => res.status(201).json({ order: { number: order.number, total: order.total }, payment }))
+    .then((payment) => {
+      // Card orders are announced once Flitt confirms the payment (see applyPayment).
+      if (order.paymentMethod !== 'card') notifyOrder(order.id);
+      res.status(201).json({ order: { number: order.number, total: order.total }, payment });
+    })
     .catch((err) => {
       // The customer chose to pay by card, so don't keep an order nobody can pay for.
       console.error('payment init failed', order.number, err.message);
@@ -226,7 +232,7 @@ function cancelOrder(d, o, reason) {
 // Applies a verified Flitt result to its order. Safe to call repeatedly:
 // Flitt reports each payment both to the callback and via the browser return.
 function applyPayment(result) {
-  return store.update((d) => {
+  const order = store.update((d) => {
     const o = d.orders.find((x) => x.paymentRef && x.paymentRef === result.ref);
     if (!o) return null;
     o.paymentId = result.paymentId || o.paymentId;
@@ -246,6 +252,28 @@ function applyPayment(result) {
       o.paymentStatus = 'refunded';
     }
     return o;
+  });
+  if (order && order.paymentStatus === 'paid') notifyOrder(order.id);
+  return order;
+}
+
+// Emails the shop and the customer about an order, once. The order is marked
+// before sending, so the Flitt callback and the browser return cannot both send.
+function notifyOrder(orderId) {
+  if (!mailer.configured()) return;
+  const order = store.update((d) => {
+    const o = d.orders.find((x) => x.id === orderId);
+    if (!o || o.emailedAt) return null;
+    o.emailedAt = new Date().toISOString();
+    return o;
+  });
+  if (!order) return;
+  const db = store.read();
+  mailer.sendOrderEmails(order, db.settings, db.products).then((result) => {
+    store.update((d) => {
+      const o = d.orders.find((x) => x.id === orderId);
+      if (o) o.emailResult = result;
+    });
   });
 }
 
@@ -346,7 +374,7 @@ admin.post('/password', (req, res) => {
 
 admin.get('/data', (req, res) => {
   const { auth: _auth, ...db } = store.read();
-  res.json({ ...db, statuses: ORDER_STATUSES, paymentsConfigured: payments.configured() });
+  res.json({ ...db, statuses: ORDER_STATUSES, paymentsConfigured: payments.configured(), mailConfigured: mailer.configured(), mailNotifyTo: mailer.notifyTo() });
 });
 
 admin.post('/products', (req, res) => {
@@ -404,6 +432,14 @@ admin.put('/orders/:id', (req, res) => {
   });
   if (!order) return res.status(404).json({ error: 'not found' });
   res.json(order);
+});
+
+admin.post('/test-email', async (req, res) => {
+  try {
+    res.json(await mailer.sendTest());
+  } catch (err) {
+    res.status(502).json({ error: 'წერილი ვერ გაიგზავნა: ' + err.message });
+  }
 });
 
 admin.post('/orders/:id/check-payment', async (req, res) => {

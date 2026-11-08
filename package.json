@@ -18,7 +18,8 @@
   "homepage": "https://github.com/Ollshenski/Taste-lab#readme",
   "dependencies": {
     "express": "^4.22.3",
-    "multer": "^2.5.0"
+    "multer": "^2.5.0",
+    "nodemailer": "10.2.1"
   },
   "private": true,
   "engines": {

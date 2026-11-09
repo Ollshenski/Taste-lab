@@ -21,6 +21,16 @@
       <label class="field"><span>პაროლი</span><input type="password" name="password" required autocomplete="current-password" autofocus></label>
       <p class="error" data-login-error role="alert"></p>
       <button class="btn btn--primary btn--block" type="submit">შესვლა</button>
+      <button class="linkish" type="button" data-forgot>დაგავიწყდა პაროლი?</button>
+    </form>
+    <form class="login__card" data-reset-form hidden>
+      <img src="/assets/mark.svg" alt="" width="90">
+      <h1>ახალი პაროლი</h1>
+      <p class="mono muted">ADMIN · PASSWORD RESET</p>
+      <label class="field"><span>ახალი პაროლი (მინ. 8 სიმბოლო)</span><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+      <label class="field" style="margin-top:12px"><span>გაიმეორეთ</span><input type="password" name="repeat" required minlength="8" autocomplete="new-password"></label>
+      <p class="error" data-reset-error role="alert"></p>
+      <button class="btn btn--primary btn--block" type="submit">პაროლის შენახვა</button>
     </form>
   </section>
 

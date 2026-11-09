@@ -31,6 +31,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .login__card img { margin: 0 auto 10px; display: block; }
 .login__card h1 { font-family: 'Outfit'; font-size: 32px; font-weight: 800; margin: 0; }
 .login__card .field { text-align: left; margin: 24px 0 8px; }
+.linkish { margin-top: 14px; border: 0; background: none; color: var(--muted); font-size: 14px; text-decoration: underline; padding: 4px; }
+.linkish:hover { color: var(--ink); }
+.linkish:disabled { text-decoration: none; cursor: default; }
 .error { color: var(--red); font-weight: 600; min-height: 1.4em; margin: 6px 0 12px; font-size: 14px; }
 
 /* layout */

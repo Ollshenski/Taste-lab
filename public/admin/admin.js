@@ -55,7 +55,10 @@
   function showLogin() {
     $('[data-app]').hidden = true;
     $('[data-login]').hidden = false;
-    $('[data-login-form] input').focus();
+    const resetting = Boolean(resetToken) && !$('[data-reset-form]').dataset.done;
+    $('[data-login-form]').hidden = resetting;
+    $('[data-reset-form]').hidden = !resetting;
+    $(resetting ? '[data-reset-form] input' : '[data-login-form] input').focus();
   }
 
   $('[data-login-form]').addEventListener('submit', async (e) => {
@@ -66,6 +69,44 @@
     try {
       await api('/admin/login', { method: 'POST', body: { password: form.password.value } });
       form.reset();
+      await boot();
+    } catch (ex) {
+      err.textContent = ex.message;
+    }
+  });
+
+  $('[data-forgot]').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const err = $('[data-login-error]');
+    btn.disabled = true;
+    try {
+      const r = await api('/admin/forgot', { method: 'POST' });
+      err.textContent = '';
+      toast(`აღდგენის ბმული გაიგზავნა: ${r.to}`);
+      btn.textContent = `ბმული გაიგზავნა: ${r.to} (შეამოწმეთ Spam-იც)`;
+    } catch (ex) {
+      err.textContent = ex.message;
+      btn.disabled = false;
+    }
+  });
+
+  // Reset link from the email: /admin/?reset=TOKEN. The token is removed from
+  // the address bar right away so it does not stay in history.
+  const resetToken = new URLSearchParams(location.search).get('reset');
+  if (resetToken) history.replaceState(null, '', location.pathname + location.hash);
+
+  $('[data-reset-form]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const err = $('[data-reset-error]');
+    err.textContent = '';
+    if (form.password.value !== form.repeat.value) return (err.textContent = 'პაროლები არ ემთხვევა.');
+    try {
+      await api('/admin/reset', { method: 'POST', body: { token: resetToken, password: form.password.value } });
+      form.reset();
+      $('[data-reset-form]').dataset.done = '1';
+      $('[data-reset-form]').hidden = true;
+      toast('პაროლი შეიცვალა ✓');
       await boot();
     } catch (ex) {
       err.textContent = ex.message;

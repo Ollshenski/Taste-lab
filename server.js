@@ -352,6 +352,39 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ ok: true, defaultPassword: auth.isDefaultPassword() });
 });
 
+// Password recovery. The link always goes to the shop's own address from .env
+// and is built from PUBLIC_URL, never from request headers.
+const maskEmail = (e) => String(e).replace(/^(.)(.*)(.@.*)$/, (m, a, mid, b) => a + '*'.repeat(Math.min(mid.length, 6)) + b);
+
+app.post('/api/admin/forgot', async (req, res) => {
+  const base = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
+  if (!mailer.configured() || !/^https?:\/\//.test(base)) {
+    return res.status(503).json({ error: 'ელფოსტით აღდგენა არ არის ჩართული. გამოიყენეთ სერვერზე: node scripts/reset-admin-password.js' });
+  }
+  const token = auth.createResetToken();
+  if (token) {
+    try {
+      await mailer.sendPasswordReset(`${base}/admin/?reset=${token}`);
+    } catch (err) {
+      console.error('password reset email failed', err.message);
+      return res.status(502).json({ error: 'წერილი ვერ გაიგზავნა. სცადეთ მოგვიანებით.' });
+    }
+  }
+  // Same answer whether or not a new email went out, so the cooldown is not probed.
+  res.json({ ok: true, to: maskEmail(mailer.notifyTo()) });
+});
+
+app.post('/api/admin/reset', (req, res) => {
+  const token = str(req.body?.token, 200);
+  const password = str(req.body?.password, 200);
+  if (password.length < 8) return res.status(400).json({ error: 'პაროლი მინიმუმ 8 სიმბოლო უნდა იყოს.' });
+  if (!auth.resetPassword(token, password)) {
+    return res.status(400).json({ error: 'ბმული არასწორია ან ვადა გაუვიდა. მოითხოვეთ ახალი.' });
+  }
+  res.setHeader('Set-Cookie', auth.sessionCookie(auth.createToken(), req.secure));
+  res.json({ ok: true });
+});
+
 app.post('/api/admin/logout', (req, res) => {
   res.setHeader('Set-Cookie', auth.clearCookie());
   res.json({ ok: true });

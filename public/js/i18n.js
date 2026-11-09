@@ -47,6 +47,7 @@
       'load.fail': 'საიტის ჩატვირთვა ვერ მოხერხდა. განაახლეთ გვერდი.', crunch: 'ხრაშ!|CRUNCH!|ხრუშ!|POP!',
       // checkout
       'co.title': 'შეკვეთის გაფორმება', 'co.back': '← მაღაზიაში დაბრუნება', 'co.contact': 'საკონტაქტო ინფორმაცია',
+      'consent.title': 'ანალიტიკა', 'consent.text': 'საიტის გასაუმჯობესებლად ვიყენებთ Microsoft Clarity-ს. თანხმობის შემთხვევაში ის შეინახავს cookies-ს.', 'consent.accept': 'ვეთანხმები', 'consent.decline': 'უარი',
       'co.name': 'სახელი, გვარი *', 'co.email': 'ელ-ფოსტა (შეკვეთის დადასტურებისთვის)', 'co.phone': 'ტელეფონი *', 'co.delivery': 'მიწოდება', 'co.city': 'ქალაქი *',
       'co.address': 'მისამართი *', 'co.address.ph': 'ქუჩა, სახლი, ბინა', 'co.note': 'კომენტარი კურიერისთვის', 'co.payment': 'გადახდა',
       'co.agree': 'ვეთანხმები <a href="/terms" target="_blank">მომსახურების პირობებს</a> და <a href="/privacy" target="_blank">კონფიდენციალურობის პოლიტიკას</a>',
@@ -102,6 +103,7 @@
       'cart.empty': 'The flask is empty.<br>Start an experiment!', 'to.shop': 'Go to shop →',
       'load.fail': 'The site could not load. Please refresh the page.', crunch: 'CRUNCH!|POP!|CRACK!|SNAP!',
       'co.title': 'Checkout', 'co.back': '← Back to shop', 'co.contact': 'Contact details',
+      'consent.title': 'Analytics', 'consent.text': 'We use Microsoft Clarity to improve the site. If you agree, it will store cookies.', 'consent.accept': 'Accept', 'consent.decline': 'Decline',
       'co.name': 'Full name *', 'co.email': 'Email (for your order confirmation)', 'co.phone': 'Phone *', 'co.delivery': 'Delivery', 'co.city': 'City *',
       'co.address': 'Address *', 'co.address.ph': 'Street, building, apartment', 'co.note': 'Note for the courier', 'co.payment': 'Payment',
       'co.agree': 'I agree to the <a href="/terms" target="_blank">Terms of Service</a> and the <a href="/privacy" target="_blank">Privacy Policy</a>',
@@ -156,6 +158,7 @@
       'cart.empty': 'Колба пуста.<br>Начните эксперимент!', 'to.shop': 'В магазин →',
       'load.fail': 'Не удалось загрузить сайт. Обновите страницу.', crunch: 'ХРУСТ!|CRUNCH!|ХРУМ!|POP!',
       'co.title': 'Оформление заказа', 'co.back': '← Вернуться в магазин', 'co.contact': 'Контактные данные',
+      'consent.title': 'Аналитика', 'consent.text': 'Мы используем Microsoft Clarity, чтобы улучшать сайт. С вашего согласия он сохранит cookies.', 'consent.accept': 'Принять', 'consent.decline': 'Отказаться',
       'co.name': 'Имя и фамилия *', 'co.email': 'E-mail (для подтверждения заказа)', 'co.phone': 'Телефон *', 'co.delivery': 'Доставка', 'co.city': 'Город *',
       'co.address': 'Адрес *', 'co.address.ph': 'Улица, дом, квартира', 'co.note': 'Комментарий для курьера', 'co.payment': 'Оплата',
       'co.agree': 'Я принимаю <a href="/terms" target="_blank">условия обслуживания</a> и <a href="/privacy" target="_blank">политику конфиденциальности</a>',

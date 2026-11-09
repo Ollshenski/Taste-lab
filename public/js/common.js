@@ -23,7 +23,60 @@
     const res = await fetch('/api/site?lang=' + lang);
     if (!res.ok) throw new Error('site load failed');
     site = await res.json();
+    initAnalytics(site.settings.clarityId);
     return site;
+  }
+
+  /* --------------------------------------------------------- analytics */
+
+  // Microsoft Clarity. Until the visitor accepts, Clarity runs without cookies
+  // (consent API v2, analytics_Storage "denied"); ads storage is never granted.
+  const CONSENT_KEY = 'tl_consent';
+  function readConsent() {
+    try { return localStorage.getItem(CONSENT_KEY); } catch { return null; }
+  }
+  function setConsent(value) {
+    try { localStorage.setItem(CONSENT_KEY, value); } catch { /* private mode */ }
+    window.clarity?.('consentv2', { ad_Storage: 'denied', analytics_Storage: value === 'granted' ? 'granted' : 'denied' });
+  }
+
+  function initAnalytics(id) {
+    if (!/^[a-z0-9]{6,20}$/i.test(id || '') || window.clarity) return;
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, 'clarity', 'script', id);
+    const choice = readConsent();
+    window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: choice === 'granted' ? 'granted' : 'denied' });
+    window.clarity('set', 'lang', window.TLi18n?.lang || 'ka');
+    if (!choice) showConsentBanner();
+  }
+
+  function showConsentBanner() {
+    const t = window.TLi18n?.t || ((k) => k);
+    const el = document.createElement('div');
+    el.className = 'consent';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', t('consent.title'));
+    el.innerHTML = `
+      <p><b>${esc(t('consent.title'))}</b><br>${esc(t('consent.text'))} <a href="/privacy">${esc(t('privacy'))}</a></p>
+      <div class="consent__actions">
+        <button type="button" class="btn btn--ghost" data-consent="denied">${esc(t('consent.decline'))}</button>
+        <button type="button" class="btn btn--primary" data-consent="granted">${esc(t('consent.accept'))}</button>
+      </div>`;
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-consent]');
+      if (!b) return;
+      setConsent(b.dataset.consent);
+      el.remove();
+    });
+    document.body.appendChild(el);
+  }
+
+  // Custom events, visible as filters in Clarity.
+  function track(name) {
+    window.clarity?.('event', name);
   }
 
   /* -------------------------------------------------------------- cart */
@@ -140,7 +193,7 @@
   }
 
   window.TL = {
-    esc, money, get, loadSite, toast, visual,
+    esc, money, get, loadSite, toast, visual, track,
     get site() { return site; },
     cart: { add, addMix, setQty, clear, lines, totals, onChange, reconcile, raw: () => cart.slice() },
   };

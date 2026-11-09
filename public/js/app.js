@@ -162,6 +162,7 @@
       return;
     }
     flyToCart(sourceEl, p);
+    window.TL.track('add_to_cart');
     toast(t('added.to.cart', { name: p.name }));
   }
 

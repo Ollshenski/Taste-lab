@@ -620,6 +620,9 @@
           ${input('companyName_en', 'კომპანია (English)')}${input('companyName_ru', 'კომპანია (Русский)')}
           ${input('legalAddress_en', 'იურიდიული მისამართი (English)')}${input('legalAddress_ru', 'იურიდიული მისამართი (Русский)')}
         </div><p class="muted" style="font-size:13px;margin:10px 0 0">ჩანს გვერდებზე „კონტაქტი“, „მომსახურების პირობები“, „კონფიდენციალურობის პოლიტიკა“ და საიტის ქვედა ნაწილში.</p></div>
+        <div class="card"><h2>ანალიტიკა (Microsoft Clarity)</h2><div class="form-grid">
+          ${input('clarityId', 'Clarity Project ID (მაგ. abc123xyz9)')}
+        </div><p class="muted" style="font-size:13px;margin:10px 0 0">clarity.microsoft.com → პროექტი → Settings → Overview → Project ID. ცარიელი ველი = ანალიტიკა გამორთულია.</p></div>
         <div class="card"><h2>ელფოსტის შეტყობინებები</h2>
           <p style="margin:0 0 12px">${db.mailConfigured
             ? `✅ ჩართულია. ახალი შეკვეთის შეტყობინება მოვა მისამართზე <b>${esc(db.mailNotifyTo)}</b>; მომხმარებელი, თუ ელ-ფოსტა მიუთითა, მიიღებს დადასტურებას თავის ენაზე.`

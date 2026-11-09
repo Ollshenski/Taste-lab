@@ -76,6 +76,7 @@
     if (!form.agree.checked) return (err.textContent = tr('co.err.agree'));
 
     const btn = $('[data-co-submit]');
+    window.TL.track(data.payment === 'card' ? 'checkout_card' : 'checkout_cash');
     btn.disabled = true;
     btn.textContent = tr('co.processing');
     try {
@@ -122,6 +123,7 @@
   }
 
   function success(order, payment) {
+    window.TL.track('purchase');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     $('[data-co-root]').innerHTML = `
       <div class="success">

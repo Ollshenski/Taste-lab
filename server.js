@@ -502,6 +502,7 @@ admin.put('/settings', (req, res) => {
     for (const l of ['en', 'ru']) {
       for (const f of i18n.SETTING_FIELDS) s[`${f}_${l}`] = str(b[`${f}_${l}`], 200);
     }
+    s.clarityId = /^[a-z0-9]{6,20}$/i.test(str(b.clarityId, 20)) ? str(b.clarityId, 20) : '';
     s.cashOnDelivery = Boolean(b.cashOnDelivery);
     s.onlinePayments = Boolean(b.onlinePayments);
     return s;

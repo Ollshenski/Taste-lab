@@ -14,6 +14,19 @@ npm start
 - საიტი: http://localhost:3000
 - მართვის პანელი: http://localhost:3000/admin
 - საწყისი პაროლი: `tastelab2026` (ან `ADMIN_PASSWORD` გარემოს ცვლადი). **პირველი შესვლისთანავე შეცვალეთ** პანელის „პაროლი“ გვერდზე.
+- პაროლი თუ დაგავიწყდათ (სერვერზე):
+
+```bash
+docker compose stop app
+```
+
+```bash
+docker compose run --rm app node scripts/reset-admin-password.js
+```
+
+```bash
+docker compose start app
+```
 
 ## რა არის საიტზე
 

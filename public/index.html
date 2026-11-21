@@ -63,21 +63,22 @@
           <p class="hero__sub" data-bind="hero.subtitle"></p>
           <div class="hero__ctas">
             <a href="#shop" class="btn btn--primary btn--lg" data-bind="hero.ctaPrimary"></a>
-            <a href="#process" class="btn btn--ghost btn--lg"><span data-bind="hero.ctaSecondary"></span> <span aria-hidden="true">→</span></a>
+            <a href="#process" class="btn btn--ghost btn--lg hero__cta2"><span data-bind="hero.ctaSecondary"></span> <span aria-hidden="true">→</span></a>
           </div>
+          <div class="quick-shop" data-quick-shop role="list" aria-label="პროდუქტები" data-i18n-attr="aria-label:qs.label"></div>
           <ul class="hero__chips" aria-label="უპირატესობები" data-i18n-attr="aria-label:hero.chips">
             <li data-i18n="chip.natural">🌿 ნატურალური</li><li data-i18n="chip.georgia">🇬🇪 შექმნილია საქართველოში</li><li>🧊 −40°C</li>
           </ul>
         </div>
 
-        <div class="hero__stage" data-stage aria-hidden="true">
-          <div class="orbit orbit--1"></div>
-          <div class="orbit orbit--2"></div>
+        <div class="hero__stage" data-stage>
+          <div class="orbit orbit--1" aria-hidden="true"></div>
+          <div class="orbit orbit--2" aria-hidden="true"></div>
           <div class="hero__packs" data-hero-packs></div>
-          <div class="floaters" data-floaters></div>
-          <div class="tag tag--1 mono">SPECIMEN №01<br><b>−40°C</b></div>
-          <div class="tag tag--2 mono">H₂O → <b>0%</b></div>
-          <div class="tag tag--3 mono">CRUNCH<br><b>MAX</b></div>
+          <div class="floaters" data-floaters aria-hidden="true"></div>
+          <div class="tag tag--1 mono" aria-hidden="true">SPECIMEN №01<br><b>−40°C</b></div>
+          <div class="tag tag--2 mono" aria-hidden="true">H₂O → <b>0%</b></div>
+          <div class="tag tag--3 mono" aria-hidden="true">CRUNCH<br><b>MAX</b></div>
         </div>
       </div>
       <div class="hero__scroll mono" aria-hidden="true"><span></span> scroll</div>
@@ -263,6 +264,14 @@
   <!-- PRODUCT MODAL -->
   <div class="modal" data-modal hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal__card" data-modal-card></div>
+  </div>
+
+  <!-- MOBILE CART BAR -->
+  <div class="cartbar" data-cartbar hidden>
+    <button type="button" class="cartbar__info" data-open-cart>
+      <span aria-hidden="true">🧺</span> <span data-cartbar-count></span> · <strong data-cartbar-total></strong>
+    </button>
+    <a href="/checkout" class="btn btn--primary" data-i18n="checkout">შეკვეთის გაფორმება →</a>
   </div>
 
   <div class="toast" data-toast role="status" aria-live="polite"></div>

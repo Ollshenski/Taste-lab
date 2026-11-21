@@ -24,6 +24,7 @@
     renderStats();
     renderFilters();
     renderProducts();
+    renderQuickShop();
     renderSteps();
     renderMixer();
     renderBenefits();
@@ -39,6 +40,49 @@
     setupCart();
     setupNewsletter();
     if (location.hash === '#cart') openCart();
+    openFromLink();
+  }
+
+  // Links from ads and posts: ?p=<product-slug> opens that product, #shop
+  // scrolls to the shop once the products are on the page.
+  function openFromLink() {
+    const slug = new URLSearchParams(location.search).get('p');
+    const p = slug && site.products.find((x) => x.slug === slug);
+    if (p) {
+      openProduct(p.id);
+      return;
+    }
+    const target = location.hash && location.hash.length > 1 && document.getElementById(location.hash.slice(1));
+    if (target) requestAnimationFrame(() => target.scrollIntoView());
+  }
+
+  function setProductParam(slug) {
+    const url = new URL(location.href);
+    if (slug) url.searchParams.set('p', slug);
+    else url.searchParams.delete('p');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }
+
+  /* --------------------------------------------------------- quick shop */
+
+  // Mobile only (hidden by CSS on wide screens): every product right under the
+  // hero buttons, so the first screen already shows what is for sale.
+  function renderQuickShop() {
+    const wrap = $('[data-quick-shop]');
+    wrap.innerHTML = site.products.map((p) => {
+      const out = p.stock <= 0;
+      return `
+      <div class="qcard" role="listitem" style="--c:${esc(p.color)}" data-id="${esc(p.id)}">
+        <button type="button" class="qcard__open" data-open="${esc(p.id)}" aria-label="${esc(p.name)}">
+          <span class="qcard__img">${visual(p)}</span>
+          <span class="qcard__name">${esc(p.name)}</span>
+        </button>
+        <div class="qcard__foot">
+          <strong>${money(p.price)}</strong>
+          <button type="button" class="qcard__add" data-add="${esc(p.id)}" ${out ? 'disabled' : ''} aria-label="${t('add.to.cart')} — ${esc(p.name)}">${out ? '×' : '+'}</button>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   /* ------------------------------------------------------------ content */
@@ -152,7 +196,13 @@
       return;
     }
     const open = e.target.closest('[data-open]');
-    if (open) openProduct(open.dataset.open);
+    if (open) {
+      openProduct(open.dataset.open);
+      return;
+    }
+    // Anywhere else on a product card (name, price, text) opens it too.
+    const card = e.target.closest('.card[data-id]');
+    if (card) openProduct(card.dataset.id);
   });
 
   function addToCart(id, qty, sourceEl) {
@@ -223,6 +273,7 @@
     const p = site.products.find((x) => x.id === id);
     if (!p) return;
     lastFocus = document.activeElement;
+    setProductParam(p.slug);
     const n = p.nutrition || {};
     const out = p.stock <= 0;
     $('[data-modal-card]').innerHTML = `
@@ -276,6 +327,7 @@
     const modal = $('[data-modal]');
     modal.classList.remove('is-open');
     document.body.classList.remove('no-scroll');
+    setProductParam(null);
     setTimeout(() => (modal.hidden = true), 250);
     lastFocus?.focus?.();
   }
@@ -653,6 +705,10 @@
       el.classList.toggle('is-on', t.count > 0);
     });
     $('[data-cart-subtotal]').textContent = money(t.subtotal);
+    $('[data-cartbar]').hidden = !t.count;
+    document.body.classList.toggle('has-cartbar', t.count > 0);
+    $('[data-cartbar-count]').textContent = window.TLi18n.t('cartbar.count', { n: t.count });
+    $('[data-cartbar-total]').textContent = money(t.subtotal);
     $('[data-checkout-link]').classList.toggle('is-disabled', !t.count);
 
     const left = Math.max(0, t.free - t.subtotal);

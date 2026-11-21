@@ -395,6 +395,8 @@
           <label class="field"><span>წონა</span><input name="weight" value="${esc(p.weight)}"></label>
           <label class="field"><span>ბეჯი (მაგ. „ახალი“, „-20%“)</span><input name="badge" value="${esc(p.badge)}"></label>
           <label class="field"><span>URL (slug)</span><input name="slug" value="${esc(p.slug)}" placeholder="ავტომატური"></label>
+          ${id ? `<div class="field full"><span>ბმული რეკლამისთვის / პოსტისთვის (პროდუქტი პირდაპირ გაიხსნება)</span>
+            <div style="display:flex;gap:8px"><input readonly value="${esc(location.origin + '/?p=' + p.slug)}" data-ad-link style="flex:1"><button class="btn btn--sm" type="button" data-copy-link>კოპირება</button></div></div>` : ''}
         </div></fieldset>
         <fieldset><legend>ვიზუალი</legend>
           <div class="form-grid">
@@ -461,6 +463,16 @@
       $$('[data-illo]').forEach((x) => x.classList.toggle('is-on', x === b));
       preview();
     }));
+    $('[data-copy-link]')?.addEventListener('click', async () => {
+      const input = $('[data-ad-link]');
+      try {
+        await navigator.clipboard.writeText(input.value);
+        toast('ბმული დაკოპირდა ✓');
+      } catch {
+        input.select();
+        toast('მონიშნეთ და დააკოპირეთ (Cmd+C)');
+      }
+    });
     $('[data-pick-file]').addEventListener('click', () => $('[data-file]').click());
     $('[data-file]').addEventListener('change', async (e) => {
       const file = e.target.files[0];

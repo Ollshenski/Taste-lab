@@ -137,36 +137,58 @@
   // Only show category chips that have products on sale.
   /* --------------------------------------------------------------- sale */
 
-  // Bar under the announcement while a sale (e.g. Black Friday) is on, with a
+  // Banner under the menu while a sale (e.g. Black Friday) is on, with a
   // countdown when it has an end time. It goes away by itself at the end.
   function renderSaleBar() {
     const sale = site.settings.sale;
+    const wrap = $('[data-salebar-wrap]');
     const bar = $('[data-salebar]');
     const max = Math.max(0, ...site.products.map((p) => p.salePercent || 0));
-    if (!sale || !max) return;
+    if (!sale || !(max || sale.text || sale.title)) return;
     const end = Date.parse(sale.endsAt);
-    bar.innerHTML = `<span class="salebar__title">🔥 ${esc(sale.title)}</span>
-      <span class="salebar__off">${esc(t('sale.upto', { n: max }))}</span>
-      ${end ? `<span class="salebar__clock mono"><small>${esc(t('sale.ends'))}</small> <b data-sale-clock></b></span>` : ''}
-      <span class="salebar__cta">${esc(t('sale.cta'))}</span>`;
-    bar.hidden = false;
-    bar.addEventListener('click', () => {
-      filter = 'sale';
-      renderFilters();
-      renderProducts();
-    });
+    const off = sale.text ? esc(sale.text) : max ? esc(t('sale.upto', { n: max })).replace(`${max}%`, `<em>${max}%</em>`) : '';
+    const unit = (u, label) => `<span class="salebar__unit"><b data-u="${u}">00</b><small>${esc(t(label))}</small></span>`;
+    bar.innerHTML = `
+      <span class="salebar__text">
+        <span class="salebar__title"><span class="salebar__fire" aria-hidden="true">🔥</span>${esc(sale.title)}</span>
+        ${off ? `<span class="salebar__off">${off}</span>` : ''}
+      </span>
+      ${end ? `<span class="salebar__clock" role="timer" aria-label="${esc(t('sale.ends'))}">
+        <small class="salebar__ends">${esc(t('sale.ends'))}</small>
+        ${unit('d', 'sale.days')}${unit('h', 'sale.hours')}${unit('m', 'sale.min')}${unit('s', 'sale.sec')}
+      </span>` : ''}
+      <span class="salebar__cta">${esc(sale.cta || t('sale.cta'))}</span>`;
+    bar.classList.toggle('salebar--orange', sale.theme === 'orange');
+    wrap.hidden = false;
+    if (sale.link) {
+      bar.href = sale.link;
+      if (/^https:/.test(sale.link)) bar.rel = 'noopener';
+    } else if (max) {
+      // No link set: show the products that are on sale.
+      bar.addEventListener('click', () => {
+        filter = 'sale';
+        renderFilters();
+        renderProducts();
+      });
+    }
+    // A link to a product on this page (/?p=…) opens it without reloading.
+    const slug = sale.link && new URL(sale.link, location.href).origin === location.origin && new URL(sale.link, location.href).searchParams.get('p');
+    const linked = slug && site.products.find((p) => p.slug === slug);
+    if (linked) bar.addEventListener('click', (e) => { e.preventDefault(); openProduct(linked.id); });
     if (!end) return;
-    const clock = $('[data-sale-clock]');
     const pad = (n) => String(n).padStart(2, '0');
+    const set = (u, v) => ($(`[data-u="${u}"]`, bar).textContent = pad(v));
     const tick = () => {
       const left = Math.max(0, Math.floor((end - Date.now()) / 1000));
       if (!left) {
-        bar.hidden = true;
+        wrap.hidden = true;
         clearInterval(timer);
         return;
       }
-      const d = Math.floor(left / 86400);
-      clock.textContent = `${d ? d + t('sale.d') + ' ' : ''}${pad(Math.floor(left / 3600) % 24)}:${pad(Math.floor(left / 60) % 60)}:${pad(left % 60)}`;
+      set('d', Math.floor(left / 86400));
+      set('h', Math.floor(left / 3600) % 24);
+      set('m', Math.floor(left / 60) % 60);
+      set('s', left % 60);
     };
     const timer = setInterval(tick, 1000);
     tick();

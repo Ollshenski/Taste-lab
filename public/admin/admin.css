@@ -31,6 +31,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .login__card img { margin: 0 auto 10px; display: block; }
 .login__card h1 { font-family: 'Outfit'; font-size: 32px; font-weight: 800; margin: 0; }
 .login__card .field { text-align: left; margin: 24px 0 8px; }
+.banner-grid { display: grid; grid-template-columns: 50px 1fr 1.6fr 1fr; gap: 8px 10px; align-items: center; font-size: 13px; }
+.banner-grid input { width: 100%; padding: 9px 11px; border: 2px solid var(--ink); border-radius: 10px; font: inherit; background: var(--paper, #fff); }
+@media (max-width: 800px) { .banner-grid { grid-template-columns: 40px 1fr; } .banner-grid > b { display: none; } .banner-grid > input { grid-column: 2; } .banner-grid > span { grid-row: span 3; } }
 .pill--live { background: var(--orange); color: var(--ink); }
 .sale-status { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 12px 16px; border-radius: 12px; border: 2px solid var(--ink); }
 .sale-status--on { background: #E5F6E6; }

@@ -94,23 +94,71 @@ p { margin: 0 0 1em; }
 .announce__track span { white-space: nowrap; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
-/* Sale bar (Black Friday etc.) */
+/* Sale banner (Black Friday etc.), right under the menu */
+.salebar-wrap { padding-top: 14px; }
+.salebar-wrap[hidden] { display: none; }
 .salebar {
-  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 14px;
-  padding: 10px 16px; background: var(--orange); color: var(--ink); border-bottom: 2.5px solid var(--ink);
-  font-family: var(--font-ka); font-weight: 700; font-size: 15px; text-decoration: none; text-align: center;
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; align-items: center; gap: 18px 28px; flex-wrap: wrap;
+  padding: 18px 26px; border: 2.5px solid var(--ink); border-radius: var(--radius);
+  background: var(--ink); color: var(--cream); box-shadow: 5px 5px 0 var(--orange);
+  text-decoration: none; transition: transform .2s var(--ease), box-shadow .2s var(--ease);
 }
-.salebar[hidden] { display: none; }
-.salebar__title { text-transform: uppercase; letter-spacing: .02em; }
-.salebar__clock { background: var(--ink); color: var(--cream); border-radius: 999px; padding: 3px 12px; font-size: 14px; }
-.salebar__clock small { opacity: .7; font-size: 11px; font-family: var(--font-ka); }
-.salebar__cta { text-decoration: underline; text-underline-offset: 3px; }
+.salebar::before { /* slow light sweep */
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, rgba(245,130,32,.28) 50%, transparent 65%);
+  background-size: 250% 100%; animation: sale-sweep 4.5s linear infinite;
+}
+@keyframes sale-sweep { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.salebar:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--orange); }
+.salebar__text { display: flex; flex-direction: column; gap: 2px; margin-right: auto; }
+.salebar__title { display: flex; align-items: center; gap: 8px; font-family: 'Outfit', var(--font-ka); font-weight: 900; font-size: clamp(22px, 2.6vw, 32px); text-transform: uppercase; letter-spacing: .02em; line-height: 1.05; }
+.salebar__fire { display: inline-block; animation: sale-fire 1.4s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes sale-fire { 50% { transform: scale(1.18) rotate(-6deg); } }
+.salebar__off { font-family: var(--font-ka); font-weight: 700; font-size: 17px; color: var(--cream); opacity: .9; }
+.salebar__off em { font-style: normal; color: var(--orange-2); font-size: 1.35em; font-family: 'Outfit', sans-serif; font-weight: 900; }
+.salebar__clock { display: flex; align-items: center; gap: 8px; }
+.salebar__ends { font-family: var(--font-ka); font-size: 12px; opacity: .75; margin-right: 4px; text-align: right; line-height: 1.2; }
+.salebar__unit { display: flex; flex-direction: column; align-items: center; min-width: 54px; padding: 6px 6px 4px; background: var(--cream); color: var(--ink); border-radius: 12px; }
+.salebar__unit b { font-family: 'Space Mono', monospace; font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums; }
+.salebar__unit small { font-family: var(--font-ka); font-size: 10px; color: var(--muted); margin-top: 3px; }
+.salebar__cta {
+  font-family: var(--font-ka); font-weight: 700; font-size: 15px; white-space: nowrap;
+  background: var(--orange); color: var(--ink); border: 2px solid var(--cream); border-radius: 999px; padding: 12px 20px;
+}
+.salebar--orange { background: var(--orange); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+.salebar--orange:hover { box-shadow: 7px 7px 0 var(--ink); }
+.salebar--orange::before { background-image: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.35) 50%, transparent 65%); }
+.salebar--orange .salebar__off { color: var(--ink); }
+.salebar--orange .salebar__off em { color: var(--paper); -webkit-text-stroke: 1px var(--ink); }
+.salebar--orange .salebar__unit { background: var(--ink); color: var(--cream); }
+.salebar--orange .salebar__unit small { color: rgba(253,243,232,.7); }
+.salebar--orange .salebar__cta { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+@media (max-width: 900px) {
+  .salebar-wrap { padding-top: 6px; }
+  .salebar { padding: 12px 14px; gap: 10px 12px; border-radius: 18px; box-shadow: 4px 4px 0 var(--orange); }
+  .salebar__title { font-size: 20px; }
+  .salebar__off { font-size: 14px; }
+  .salebar__text { margin-right: 0; flex: 1 1 100%; flex-direction: row; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 2px 10px; }
+  .salebar__ends { display: none; }
+  .salebar__clock { gap: 5px; }
+  .salebar__unit { min-width: 42px; padding: 4px 4px 3px; border-radius: 9px; }
+  .salebar__unit b { font-size: 18px; }
+  .salebar__unit small { font-size: 9px; }
+  .salebar__cta { margin-left: auto; padding: 9px 14px; font-size: 13px; }
+}
+@media (max-width: 380px) {
+  .salebar__cta { font-size: 0; padding: 9px 14px; }
+  .salebar__cta::after { content: '→'; font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .salebar::before, .salebar__fire { animation: none; }
+}
 .card__badge.card__badge--sale { background: var(--ink); color: var(--orange-2); font-family: 'Outfit', sans-serif; font-size: 14px; }
 .mix-old { opacity: .55; font-size: .7em; }
-@media (max-width: 560px) {
-  .salebar { font-size: 13px; gap: 4px 10px; padding: 8px 12px; }
-  .salebar__cta { display: none; }
-}
+/* With the sale banner above it, the hero needs less empty height. */
+.salebar-wrap:not([hidden]) + .hero { padding-top: 16px; }
+.salebar-wrap:not([hidden]) + .hero .hero__grid { min-height: min(640px, calc(100vh - 260px)); }
 
 /* ---------------------------------------------------------------- header */
 .header {

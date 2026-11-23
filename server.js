@@ -141,8 +141,19 @@ app.get('/api/site', (req, res) => {
   const lang = i18n.pickLang(req.query.lang);
   const settings = i18n.localizeSettings(db.settings, lang);
   const s = db.settings;
+  // Banner texts per language; an empty translation falls back to Georgian.
+  const tr = (f) => (lang !== 'ka' && s[`${f}_${lang}`]) || s[f] || '';
+  // Text and button: without a translation the automatic wording in that language is used.
+  const own = (f) => (lang === 'ka' ? s[f] : s[`${f}_${lang}`]) || '';
   const sale = saleActive(s)
-    ? { title: (lang !== 'ka' && s[`saleTitle_${lang}`]) || s.saleTitle || 'Sale', endsAt: s.saleEndsAt || '' }
+    ? {
+        title: tr('saleTitle'),
+        text: own('saleText'),
+        cta: own('saleCta'),
+        link: s.saleLink || '',
+        theme: s.saleTheme === 'orange' ? 'orange' : 'dark',
+        endsAt: s.saleCountdown === false ? '' : s.saleEndsAt || '',
+      }
     : null;
   res.json({
     lang,
@@ -593,6 +604,15 @@ admin.put('/sale', (req, res) => {
     s.saleTitle = str(b.saleTitle, 60);
     s.saleTitle_en = str(b.saleTitle_en, 60);
     s.saleTitle_ru = str(b.saleTitle_ru, 60);
+    for (const l of ['', '_en', '_ru']) {
+      s[`saleText${l}`] = str(b[`saleText${l}`], 160);
+      s[`saleCta${l}`] = str(b[`saleCta${l}`], 40);
+    }
+    // Banner link: a page of this site (/…, #…) or an https address.
+    const link = str(b.saleLink, 300);
+    s.saleLink = /^(\/(?!\/)|#|https:\/\/)/.test(link) ? link : '';
+    s.saleTheme = b.saleTheme === 'orange' ? 'orange' : 'dark';
+    s.saleCountdown = b.saleCountdown !== false;
     s.saleStartsAt = isoOrEmpty(b.saleStartsAt);
     s.saleEndsAt = isoOrEmpty(b.saleEndsAt);
     s.saleMixPrice = b.saleMixPrice === '' || b.saleMixPrice == null ? null : num(b.saleMixPrice, { min: 0, max: 100000 }) || null;

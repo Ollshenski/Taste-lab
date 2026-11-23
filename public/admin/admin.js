@@ -682,13 +682,30 @@
           <div class="sale-status sale-status--${state}"><b>${state === 'on' ? '● აქცია ჩართულია' : state === 'wait' ? '◷ დაგეგმილია' : '○ აქცია არ მოქმედებს'}</b><span>${esc(label)}</span></div>
           <label class="check" style="margin:16px 0"><input type="checkbox" name="saleEnabled" ${s.saleEnabled ? 'checked' : ''}> <b>აქციის ჩართვა</b></label>
           <div class="form-grid">
-            <label class="field"><span>აქციის სახელი (ჩანს საიტის ზედა ზოლში)</span><input name="saleTitle" value="${esc(s.saleTitle || '')}" placeholder="Black Friday"></label>
-            <label class="field"><span>სახელი (English)</span><input name="saleTitle_en" value="${esc(s.saleTitle_en || '')}"></label>
-            <label class="field"><span>სახელი (Русский)</span><input name="saleTitle_ru" value="${esc(s.saleTitle_ru || '')}"></label>
-            <span></span>
             <label class="field"><span>დაწყება (ცარიელი = ახლავე)</span><input type="datetime-local" name="saleStartsAt" value="${toLocalInput(s.saleStartsAt)}"></label>
             <label class="field"><span>დასრულება (ცარიელი = სანამ არ გამორთავთ)</span><input type="datetime-local" name="saleEndsAt" value="${toLocalInput(s.saleEndsAt)}"><small>საიტზე ჩანს უკუთვლა დასრულებამდე</small></label>
           </div>
+        </div>
+        <div class="card">
+          <h2>საქციო ბანერი (მენიუს ქვეშ)</h2>
+          <p class="muted" style="font-size:13px;margin:0 0 14px">ჩანს საიტის ზედა ნაწილში, სანამ აქცია მოქმედებს. ცარიელი ტექსტი ან ღილაკი ავტომატურად შეივსება (მაგ. „ფასდაკლება 20%-მდე“). თუ აქციის ფასებს არ შეავსებთ, ბანერი მაინც გამოჩნდება — შეგიძლიათ გამოიყენოთ ნებისმიერი პრომოსთვის.</p>
+          <div class="banner-grid">
+            <span></span><b>სათაური</b><b>ტექსტი</b><b>ღილაკი</b>
+            ${[['', 'ქართ.'], ['_en', 'EN'], ['_ru', 'RU']].map(([l, name]) => `
+              <span class="mono">${name}</span>
+              <input name="saleTitle${l}" value="${esc(s['saleTitle' + l] || '')}" placeholder="${l ? 'ცარიელი = ქართული' : 'Black Friday'}">
+              <input name="saleText${l}" value="${esc(s['saleText' + l] || '')}" placeholder="ავტომატური: ${l === '_en' ? 'up to 20% off' : l === '_ru' ? 'скидки до 20%' : 'ფასდაკლება 20%-მდე'}">
+              <input name="saleCta${l}" value="${esc(s['saleCta' + l] || '')}" placeholder="${l === '_en' ? 'Shop the sale →' : l === '_ru' ? 'Товары со скидкой →' : 'აქციის პროდუქტები →'}">`).join('')}
+          </div>
+          <div class="form-grid" style="margin-top:16px">
+            <label class="field"><span>ღილაკის ბმული (ცარიელი = აქციის პროდუქტები)</span><input name="saleLink" value="${esc(s.saleLink || '')}" placeholder="/?p=bite-raspberry-matsoni ან https://…"></label>
+            <div class="field"><span>ფერი</span>
+              <div style="display:flex;gap:16px;padding-top:8px">
+                <label class="check"><input type="radio" name="saleTheme" value="dark" ${s.saleTheme !== 'orange' ? 'checked' : ''}> ⬛ შავი</label>
+                <label class="check"><input type="radio" name="saleTheme" value="orange" ${s.saleTheme === 'orange' ? 'checked' : ''}> 🟧 ნარინჯისფერი</label>
+              </div></div>
+          </div>
+          <label class="check" style="margin-top:12px"><input type="checkbox" name="saleCountdown" ${s.saleCountdown !== false ? 'checked' : ''}> უკუთვლის ჩვენება (თუ დასრულების დრო მითითებულია)</label>
         </div>
         <div class="card">
           <div class="sale-head">
@@ -754,6 +771,9 @@
         saleTitle: form.saleTitle.value,
         saleTitle_en: form.saleTitle_en.value,
         saleTitle_ru: form.saleTitle_ru.value,
+        ...Object.fromEntries(['saleText', 'saleText_en', 'saleText_ru', 'saleCta', 'saleCta_en', 'saleCta_ru', 'saleLink'].map((k) => [k, form[k].value])),
+        saleTheme: form.saleTheme.value,
+        saleCountdown: form.saleCountdown.checked,
         saleStartsAt: fromLocalInput(form.saleStartsAt.value),
         saleEndsAt: fromLocalInput(form.saleEndsAt.value),
         saleMixPrice: form.saleMixPrice.value,

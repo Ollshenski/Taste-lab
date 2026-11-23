@@ -94,6 +94,24 @@ p { margin: 0 0 1em; }
 .announce__track span { white-space: nowrap; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 
+/* Sale bar (Black Friday etc.) */
+.salebar {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 14px;
+  padding: 10px 16px; background: var(--orange); color: var(--ink); border-bottom: 2.5px solid var(--ink);
+  font-family: var(--font-ka); font-weight: 700; font-size: 15px; text-decoration: none; text-align: center;
+}
+.salebar[hidden] { display: none; }
+.salebar__title { text-transform: uppercase; letter-spacing: .02em; }
+.salebar__clock { background: var(--ink); color: var(--cream); border-radius: 999px; padding: 3px 12px; font-size: 14px; }
+.salebar__clock small { opacity: .7; font-size: 11px; font-family: var(--font-ka); }
+.salebar__cta { text-decoration: underline; text-underline-offset: 3px; }
+.card__badge.card__badge--sale { background: var(--ink); color: var(--orange-2); font-family: 'Outfit', sans-serif; font-size: 14px; }
+.mix-old { opacity: .55; font-size: .7em; }
+@media (max-width: 560px) {
+  .salebar { font-size: 13px; gap: 4px 10px; padding: 8px 12px; }
+  .salebar__cta { display: none; }
+}
+
 /* ---------------------------------------------------------------- header */
 .header {
   position: sticky; top: 0; z-index: 50;
@@ -727,6 +745,13 @@ mark.todo { background: #FFE08A; color: var(--ink); border-radius: 4px; padding:
   }
   .qcard__foot { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px 10px; margin-top: auto; }
   .qcard__foot strong { font-family: 'Outfit', sans-serif; font-size: 15px; }
+  .qcard__price { display: flex; flex-direction: column; line-height: 1.1; }
+  .qcard__price s { font-size: 11px; color: var(--muted); }
+  .qcard__img { position: relative; }
+  .qcard__sale {
+    position: absolute; top: 6px; right: 6px; background: var(--ink); color: var(--orange-2); border-radius: 999px;
+    padding: 2px 7px; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px;
+  }
   .qcard__add {
     width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--ink); background: var(--orange);
     font-size: 20px; font-weight: 700; line-height: 1; display: grid; place-items: center;

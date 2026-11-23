@@ -31,6 +31,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .login__card img { margin: 0 auto 10px; display: block; }
 .login__card h1 { font-family: 'Outfit'; font-size: 32px; font-weight: 800; margin: 0; }
 .login__card .field { text-align: left; margin: 24px 0 8px; }
+.pill--live { background: var(--orange); color: var(--ink); }
+.sale-status { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 12px 16px; border-radius: 12px; border: 2px solid var(--ink); }
+.sale-status--on { background: #E5F6E6; }
+.sale-status--wait { background: #FFF4D6; }
+.sale-status--off { background: #F3EEE8; }
+.sale-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.sale-bulk { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+.sale-input, [data-bulk-pct] { width: 110px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 10px; font: inherit; background: var(--paper, #fff); }
+[data-bulk-pct] { width: 70px; }
+.sale-pct { color: #C2410C; white-space: nowrap; }
+.sale-tag { color: #C2410C; font-weight: 700; }
 .linkish { margin-top: 14px; border: 0; background: none; color: var(--muted); font-size: 14px; text-decoration: underline; padding: 4px; }
 .linkish:hover { color: var(--ink); }
 .linkish:disabled { text-decoration: none; cursor: default; }

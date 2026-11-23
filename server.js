@@ -57,10 +57,38 @@ function slugify(s) {
     .slice(0, 60) || crypto.randomBytes(4).toString('hex');
 }
 
-function publicProduct(p) {
-  const { createdAt, updatedAt, ...rest } = p;
-  return rest;
+// Sales (Black Friday and the like). While a sale is on, products with a sale
+// price sell at it and the regular price is shown crossed out. The sale runs
+// between the optional start and end times; outside them prices are normal.
+function saleActive(s, now = Date.now()) {
+  if (!s.saleEnabled) return false;
+  const start = Date.parse(s.saleStartsAt || '');
+  const end = Date.parse(s.saleEndsAt || '');
+  if (start && now < start) return false;
+  if (end && now >= end) return false;
+  return true;
 }
+
+function salePrice(price, sale, s) {
+  return saleActive(s) && sale > 0 && sale < price ? sale : null;
+}
+
+function publicProduct(p, s) {
+  const { createdAt, updatedAt, salePrice: sale, ...rest } = p;
+  const now = salePrice(p.price, sale, s);
+  if (now === null) return rest;
+  return { ...rest, price: now, oldPrice: p.price, salePercent: Math.round((1 - now / p.price) * 100) };
+}
+
+function mixPrice(s) {
+  const regular = num(s.mixPrice, { min: 0 });
+  return salePrice(regular, num(s.saleMixPrice, { min: 0 }), s) ?? regular;
+}
+
+const isoOrEmpty = (v) => {
+  const t = Date.parse(str(v, 40));
+  return Number.isFinite(t) ? new Date(t).toISOString() : '';
+};
 
 function sanitizeProduct(input, existing = {}) {
   const nutrition = input.nutrition && typeof input.nutrition === 'object' ? input.nutrition : {};
@@ -74,6 +102,7 @@ function sanitizeProduct(input, existing = {}) {
     description: str(input.description, 2000),
     ingredients: str(input.ingredients, 500),
     price: num(input.price, { min: 0, max: 100000 }),
+    salePrice: input.salePrice === '' || input.salePrice == null ? null : num(input.salePrice, { min: 0, max: 100000 }) || null,
     oldPrice: input.oldPrice === '' || input.oldPrice == null ? null : num(input.oldPrice, { min: 0, max: 100000 }),
     weight: str(input.weight, 30),
     stock: num(input.stock, { min: 0, max: 1e6, int: true }),
@@ -111,12 +140,22 @@ app.get('/api/site', (req, res) => {
   const db = store.read();
   const lang = i18n.pickLang(req.query.lang);
   const settings = i18n.localizeSettings(db.settings, lang);
+  const s = db.settings;
+  const sale = saleActive(s)
+    ? { title: (lang !== 'ka' && s[`saleTitle_${lang}`]) || s.saleTitle || 'Sale', endsAt: s.saleEndsAt || '' }
+    : null;
   res.json({
     lang,
     content: i18n.localizeContent(db, lang),
-    // Card payment is only offered once Flitt credentials are set on the server.
-    settings: { ...settings, onlinePayments: Boolean(db.settings.onlinePayments) && payments.configured() },
-    products: db.products.filter((p) => p.active).map((p) => publicProduct(i18n.localizeProduct(p, lang))),
+    settings: {
+      ...settings,
+      // Card payment is only offered once Flitt credentials are set on the server.
+      onlinePayments: Boolean(s.onlinePayments) && payments.configured(),
+      mixPrice: mixPrice(s),
+      mixOldPrice: mixPrice(s) < num(s.mixPrice, { min: 0 }) ? num(s.mixPrice, { min: 0 }) : null,
+      sale,
+    },
+    products: db.products.filter((p) => p.active).map((p) => publicProduct(i18n.localizeProduct(p, lang), s)),
   });
 });
 
@@ -155,7 +194,7 @@ app.post('/api/orders', (req, res) => {
         type: 'mix',
         name: 'ჩემი Lab Mix — ' + parts.map((p) => p.name).join(' + '),
         parts: parts.map((p) => p.id),
-        price: num(db.settings.mixPrice, { min: 0 }),
+        price: mixPrice(db.settings),
         qty,
       });
       continue;
@@ -165,7 +204,8 @@ app.post('/api/orders', (req, res) => {
     if (product.stock < qty) {
       return res.status(409).json({ error: i18n.msg('stock', lang, { name: i18n.localizeProduct(product, lang).name, n: product.stock }) });
     }
-    items.push({ type: 'product', id: product.id, name: product.name, price: product.price, qty });
+    const sale = salePrice(product.price, product.salePrice, db.settings);
+    items.push({ type: 'product', id: product.id, name: product.name, price: sale ?? product.price, ...(sale !== null && { regularPrice: product.price }), qty });
   }
   if (!items.length) return res.status(400).json({ error: i18n.msg('empty', lang) });
 
@@ -541,6 +581,29 @@ admin.put('/settings', (req, res) => {
     return s;
   });
   res.json(settings);
+});
+
+// Sale page in the admin: switch, name, dates and every product's sale price at once.
+admin.put('/sale', (req, res) => {
+  const b = req.body || {};
+  const prices = b.prices && typeof b.prices === 'object' ? b.prices : {};
+  const out = store.update((d) => {
+    const s = d.settings;
+    s.saleEnabled = Boolean(b.saleEnabled);
+    s.saleTitle = str(b.saleTitle, 60);
+    s.saleTitle_en = str(b.saleTitle_en, 60);
+    s.saleTitle_ru = str(b.saleTitle_ru, 60);
+    s.saleStartsAt = isoOrEmpty(b.saleStartsAt);
+    s.saleEndsAt = isoOrEmpty(b.saleEndsAt);
+    s.saleMixPrice = b.saleMixPrice === '' || b.saleMixPrice == null ? null : num(b.saleMixPrice, { min: 0, max: 100000 }) || null;
+    for (const p of d.products) {
+      if (!(p.id in prices)) continue;
+      const v = prices[p.id];
+      p.salePrice = v === '' || v == null ? null : num(v, { min: 0, max: 100000 }) || null;
+    }
+    return { settings: s, products: d.products };
+  });
+  res.json({ ...out, saleActive: saleActive(out.settings) });
 });
 
 const upload = multer({

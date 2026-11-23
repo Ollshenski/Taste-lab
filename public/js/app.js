@@ -22,6 +22,7 @@
     cart.reconcile();
     bindContent();
     renderStats();
+    renderSaleBar();
     renderFilters();
     renderProducts();
     renderQuickShop();
@@ -74,11 +75,11 @@
       return `
       <div class="qcard" role="listitem" style="--c:${esc(p.color)}" data-id="${esc(p.id)}">
         <button type="button" class="qcard__open" data-open="${esc(p.id)}" aria-label="${esc(p.name)}">
-          <span class="qcard__img">${visual(p)}</span>
+          <span class="qcard__img">${visual(p)}${p.salePercent ? `<span class="qcard__sale">−${p.salePercent}%</span>` : ''}</span>
           <span class="qcard__name">${esc(p.name)}</span>
         </button>
         <div class="qcard__foot">
-          <strong>${money(p.price)}</strong>
+          <span class="qcard__price"><strong>${money(p.price)}</strong>${p.oldPrice ? `<s>${money(p.oldPrice)}</s>` : ''}</span>
           <button type="button" class="qcard__add" data-add="${esc(p.id)}" ${out ? 'disabled' : ''} aria-label="${t('add.to.cart')} — ${esc(p.name)}">${out ? '×' : '+'}</button>
         </div>
       </div>`;
@@ -134,15 +135,53 @@
   /* ----------------------------------------------------------- products */
 
   // Only show category chips that have products on sale.
+  /* --------------------------------------------------------------- sale */
+
+  // Bar under the announcement while a sale (e.g. Black Friday) is on, with a
+  // countdown when it has an end time. It goes away by itself at the end.
+  function renderSaleBar() {
+    const sale = site.settings.sale;
+    const bar = $('[data-salebar]');
+    const max = Math.max(0, ...site.products.map((p) => p.salePercent || 0));
+    if (!sale || !max) return;
+    const end = Date.parse(sale.endsAt);
+    bar.innerHTML = `<span class="salebar__title">🔥 ${esc(sale.title)}</span>
+      <span class="salebar__off">${esc(t('sale.upto', { n: max }))}</span>
+      ${end ? `<span class="salebar__clock mono"><small>${esc(t('sale.ends'))}</small> <b data-sale-clock></b></span>` : ''}
+      <span class="salebar__cta">${esc(t('sale.cta'))}</span>`;
+    bar.hidden = false;
+    bar.addEventListener('click', () => {
+      filter = 'sale';
+      renderFilters();
+      renderProducts();
+    });
+    if (!end) return;
+    const clock = $('[data-sale-clock]');
+    const pad = (n) => String(n).padStart(2, '0');
+    const tick = () => {
+      const left = Math.max(0, Math.floor((end - Date.now()) / 1000));
+      if (!left) {
+        bar.hidden = true;
+        clearInterval(timer);
+        return;
+      }
+      const d = Math.floor(left / 86400);
+      clock.textContent = `${d ? d + t('sale.d') + ' ' : ''}${pad(Math.floor(left / 3600) % 24)}:${pad(Math.floor(left / 60) % 60)}:${pad(left % 60)}`;
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+  }
+
   function renderFilters() {
     const cats = Object.keys(CATEGORY).filter((c) => site.products.some((p) => p.category === c));
-    $('[data-filters]').hidden = cats.length < 2;
-    $('[data-filters]').innerHTML = [['all', t('filter.all')], ...cats.map((c) => [c, `${FILTER_ICON[c]} ${CATEGORY[c]}`])]
+    const onSale = site.products.some((p) => p.salePercent);
+    $('[data-filters]').hidden = cats.length < 2 && !onSale;
+    $('[data-filters]').innerHTML = [['all', t('filter.all')], ...(onSale ? [['sale', t('filter.sale')]] : []), ...cats.map((c) => [c, `${FILTER_ICON[c]} ${CATEGORY[c]}`])]
       .map(([k, l]) => `<button class="chip ${k === filter ? 'is-active' : ''}" role="tab" aria-selected="${k === filter}" data-filter="${k}">${esc(l)}</button>`).join('');
   }
 
   function renderProducts() {
-    const list = site.products.filter((p) => filter === 'all' || p.category === filter);
+    const list = site.products.filter((p) => filter === 'all' || p.category === filter || (filter === 'sale' && p.salePercent));
     const wrap = $('[data-products]');
     if (!list.length) {
       wrap.innerHTML = `<p class="empty">${t('shop.empty')}</p>`;
@@ -157,7 +196,7 @@
           <span class="card__blob"></span>
           ${visual(p, 'card__img')}
           <span class="card__spec mono">SPECIMEN №${String(idx).padStart(3, '0')}</span>
-          ${p.badge ? `<span class="card__badge">${esc(p.badge)}</span>` : ''}
+          ${p.salePercent ? `<span class="card__badge card__badge--sale">−${p.salePercent}%</span>` : p.badge ? `<span class="card__badge">${esc(p.badge)}</span>` : ''}
         </button>
         <div class="card__body">
           <div class="card__meta mono"><span>${esc(CATEGORY[p.category] || '')}</span><span>${esc(p.weight)}</span></div>
@@ -391,7 +430,7 @@
         <span class="element__sym">${esc(symbolFor(p))}</span>
         <span class="element__name">${esc(p.name.replace(/^.*— /, '').replace(/^(სუბლიმირებული|freeze-dried|сублимированн\S*)\s+/i, ''))}</span>
       </button>`).join('');
-    $('[data-mix-price]').textContent = money(site.settings.mixPrice);
+    $('[data-mix-price]').innerHTML = esc(money(site.settings.mixPrice)) + (site.settings.mixOldPrice ? ` <s class="mix-old">${esc(money(site.settings.mixOldPrice))}</s>` : '');
 
     els.addEventListener('click', (e) => {
       const b = e.target.closest('[data-el]');

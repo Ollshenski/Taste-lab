@@ -137,6 +137,7 @@
     const pill = $('[data-new-orders]');
     pill.hidden = !n;
     pill.textContent = n;
+    markSaleNav();
   }
 
   /* ----------------------------------------------------------- router */
@@ -150,7 +151,7 @@
   }
   window.addEventListener('hashchange', () => db && route());
 
-  const VIEWS = { dashboard, orders, products, content, params: settings, subscribers, security };
+  const VIEWS = { dashboard, orders, products, sale, content, params: settings, subscribers, security };
 
   /* -------------------------------------------------------- dashboard */
 
@@ -340,7 +341,7 @@
             <td><div class="thumb" style="background:${esc(p.color)}22">${visual(p)}</div></td>
             <td><span class="prod-name">${esc(p.name)}</span>${p.badge ? ` <span class="status status--new">${esc(p.badge)}</span>` : ''}<br><small class="muted">${esc(p.weight)}</small></td>
             <td>${CATEGORY[p.category]}</td>
-            <td><b>${money(p.price)}</b>${p.oldPrice ? `<br><small class="muted"><s>${money(p.oldPrice)}</s></small>` : ''}</td>
+            <td><b>${money(p.price)}</b>${p.oldPrice ? `<br><small class="muted"><s>${money(p.oldPrice)}</s></small>` : ''}${p.salePrice ? `<br><small class="sale-tag">🔥 ${money(p.salePrice)}</small>` : ''}</td>
             <td class="${p.stock < 15 ? 'low' : ''}">${p.stock}</td>
             <td><label class="switch"><input type="checkbox" data-toggle="${esc(p.id)}" ${p.active ? 'checked' : ''}><span></span></label></td>
             <td style="white-space:nowrap">
@@ -390,7 +391,8 @@
         </div></fieldset>
         <fieldset><legend>ფასი და მარაგი</legend><div class="form-grid">
           <label class="field"><span>ფასი (${esc(db.settings.currency)}) *</span><input name="price" type="number" step="0.01" min="0" required value="${p.price}"></label>
-          <label class="field"><span>ძველი ფასი (ფასდაკლებისთვის)</span><input name="oldPrice" type="number" step="0.01" min="0" value="${p.oldPrice ?? ''}"></label>
+          <label class="field"><span>🔥 აქციის ფასი</span><input name="salePrice" type="number" step="0.01" min="0" value="${p.salePrice ?? ''}"><small>მოქმედებს მხოლოდ აქციის დროს (მენიუ „აქცია“)</small></label>
+          <label class="field"><span>ძველი ფასი (მუდმივად გადახაზული)</span><input name="oldPrice" type="number" step="0.01" min="0" value="${p.oldPrice ?? ''}"></label>
           <label class="field"><span>მარაგი (ცალი)</span><input name="stock" type="number" min="0" step="1" value="${p.stock}"></label>
           <label class="field"><span>წონა</span><input name="weight" value="${esc(p.weight)}"></label>
           <label class="field"><span>ბეჯი (მაგ. „ახალი“, „-20%“)</span><input name="badge" value="${esc(p.badge)}"></label>
@@ -644,6 +646,131 @@
       }
     });
     draw();
+  }
+
+  /* ------------------------------------------------------------- sale */
+
+  // Times are typed in the admin's own clock (Tbilisi) and stored as UTC.
+  const toLocalInput = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
+  const fromLocalInput = (v) => (v ? new Date(v).toISOString() : '');
+
+  function saleState(s) {
+    const now = Date.now();
+    const date = (iso) => new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+    if (!s.saleEnabled) return ['off', 'გამორთულია — საიტზე ჩვეულებრივი ფასებია'];
+    if (s.saleStartsAt && now < Date.parse(s.saleStartsAt)) return ['wait', `დაიწყება ${date(s.saleStartsAt)}`];
+    if (s.saleEndsAt && now >= Date.parse(s.saleEndsAt)) return ['off', `დასრულდა ${date(s.saleEndsAt)} — საიტზე ჩვეულებრივი ფასებია`];
+    return ['on', s.saleEndsAt ? `მიმდინარეობს · დასრულდება ${date(s.saleEndsAt)}` : 'მიმდინარეობს · დასრულების დრო არ არის მითითებული'];
+  }
+
+  function markSaleNav() {
+    $('[data-sale-live]').hidden = saleState(db.settings)[0] !== 'on';
+  }
+
+  function sale() {
+    const s = db.settings;
+    const [state, label] = saleState(s);
+    const pct = (p, v) => (v > 0 && v < p.price ? `−${Math.round((1 - v / p.price) * 100)}%` : '');
+    root.innerHTML = `
+      <div class="page-head"><div><h1>🔥 აქცია</h1><p>მაგ. Black Friday. აქციის ფასები საიტზე მხოლოდ აქციის პერიოდში მოქმედებს, შემდეგ ფასები ავტომატურად ბრუნდება.</p></div></div>
+      <form data-sale-form>
+        <div class="card">
+          <div class="sale-status sale-status--${state}"><b>${state === 'on' ? '● აქცია ჩართულია' : state === 'wait' ? '◷ დაგეგმილია' : '○ აქცია არ მოქმედებს'}</b><span>${esc(label)}</span></div>
+          <label class="check" style="margin:16px 0"><input type="checkbox" name="saleEnabled" ${s.saleEnabled ? 'checked' : ''}> <b>აქციის ჩართვა</b></label>
+          <div class="form-grid">
+            <label class="field"><span>აქციის სახელი (ჩანს საიტის ზედა ზოლში)</span><input name="saleTitle" value="${esc(s.saleTitle || '')}" placeholder="Black Friday"></label>
+            <label class="field"><span>სახელი (English)</span><input name="saleTitle_en" value="${esc(s.saleTitle_en || '')}"></label>
+            <label class="field"><span>სახელი (Русский)</span><input name="saleTitle_ru" value="${esc(s.saleTitle_ru || '')}"></label>
+            <span></span>
+            <label class="field"><span>დაწყება (ცარიელი = ახლავე)</span><input type="datetime-local" name="saleStartsAt" value="${toLocalInput(s.saleStartsAt)}"></label>
+            <label class="field"><span>დასრულება (ცარიელი = სანამ არ გამორთავთ)</span><input type="datetime-local" name="saleEndsAt" value="${toLocalInput(s.saleEndsAt)}"><small>საიტზე ჩანს უკუთვლა დასრულებამდე</small></label>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sale-head">
+            <h2 style="margin:0">აქციის ფასები</h2>
+            <div class="sale-bulk">
+              <span>ყველას ფასდაკლება</span>
+              <input type="number" min="1" max="90" step="1" value="20" data-bulk-pct style="width:70px"> %
+              <button class="btn btn--sm" type="button" data-bulk-apply>შევსება</button>
+              <button class="btn btn--sm btn--ghost" type="button" data-bulk-clear>გასუფთავება</button>
+            </div>
+          </div>
+          <p class="muted" style="font-size:13px;margin:8px 0 14px">ცარიელი ველი = პროდუქტი აქციაში არ მონაწილეობს. აქციის ფასი ჩვეულებრივზე ნაკლები უნდა იყოს.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th></th><th>პროდუქტი</th><th>ჩვეულებრივი ფასი</th><th>აქციის ფასი</th><th></th></tr></thead>
+            <tbody>${db.products.map((p) => `
+              <tr>
+                <td><div class="thumb" style="background:${esc(p.color)}22">${visual(p)}</div></td>
+                <td><span class="prod-name">${esc(p.name)}</span>${p.active ? '' : ' <small class="muted">(დამალულია)</small>'}</td>
+                <td>${money(p.price)}</td>
+                <td><input type="number" step="0.01" min="0" class="sale-input" data-sale-price="${esc(p.id)}" data-regular="${p.price}" value="${p.salePrice ?? ''}"></td>
+                <td><b class="sale-pct" data-pct-for="${esc(p.id)}">${pct(p, p.salePrice)}</b></td>
+              </tr>`).join('')}
+              <tr>
+                <td><div class="thumb">🧪</div></td>
+                <td><span class="prod-name">Lab Mix (მომხმარებლის აწყობილი)</span></td>
+                <td>${money(s.mixPrice)}</td>
+                <td><input type="number" step="0.01" min="0" class="sale-input" name="saleMixPrice" data-regular="${s.mixPrice}" value="${s.saleMixPrice ?? ''}"></td>
+                <td><b class="sale-pct" data-pct-for="mix">${pct({ price: s.mixPrice }, s.saleMixPrice)}</b></td>
+              </tr>
+            </tbody></table></div>
+        </div>
+        <div class="save-bar"><button class="btn btn--primary" type="submit">შენახვა</button></div>
+      </form>`;
+
+    const form = $('[data-sale-form]');
+    const inputs = $$('.sale-input', form);
+    const showPct = (inp) => {
+      const v = Number(inp.value);
+      const regular = Number(inp.dataset.regular);
+      const out = $(`[data-pct-for="${inp.dataset.salePrice || 'mix'}"]`);
+      out.textContent = inp.value === '' ? '' : v > 0 && v < regular ? `−${Math.round((1 - v / regular) * 100)}%` : '⚠️ ჩვეულებრივზე მეტია';
+    };
+    inputs.forEach((inp) => inp.addEventListener('input', () => showPct(inp)));
+    $('[data-bulk-apply]').addEventListener('click', () => {
+      const pctValue = Math.min(90, Math.max(1, Number($('[data-bulk-pct]').value) || 0));
+      inputs.forEach((inp) => {
+        // Rounded to 10 tetri so prices look tidy (12.90 −20% → 10.30).
+        inp.value = (Math.round(Number(inp.dataset.regular) * (100 - pctValue) / 10) / 10).toFixed(2);
+        showPct(inp);
+      });
+    });
+    $('[data-bulk-clear]').addEventListener('click', () => inputs.forEach((inp) => { inp.value = ''; showPct(inp); }));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const bad = inputs.find((inp) => inp.value !== '' && !(Number(inp.value) > 0 && Number(inp.value) < Number(inp.dataset.regular)));
+      if (bad) {
+        bad.focus();
+        return toast('აქციის ფასი ჩვეულებრივ ფასზე ნაკლები უნდა იყოს');
+      }
+      const body = {
+        saleEnabled: form.saleEnabled.checked,
+        saleTitle: form.saleTitle.value,
+        saleTitle_en: form.saleTitle_en.value,
+        saleTitle_ru: form.saleTitle_ru.value,
+        saleStartsAt: fromLocalInput(form.saleStartsAt.value),
+        saleEndsAt: fromLocalInput(form.saleEndsAt.value),
+        saleMixPrice: form.saleMixPrice.value,
+        prices: Object.fromEntries($$('[data-sale-price]', form).map((inp) => [inp.dataset.salePrice, inp.value])),
+      };
+      if (body.saleStartsAt && body.saleEndsAt && body.saleEndsAt <= body.saleStartsAt) return toast('დასრულება დაწყების შემდეგ უნდა იყოს');
+      try {
+        const r = await api('/admin/sale', { method: 'PUT', body });
+        db.settings = r.settings;
+        db.products = r.products;
+        markSaleNav();
+        toast(r.saleActive ? 'შენახულია ✓ აქცია უკვე ჩანს საიტზე' : 'შენახულია ✓');
+        sale();
+      } catch (ex) {
+        toast(ex.message);
+      }
+    });
   }
 
   /* --------------------------------------------------------- settings */
